@@ -1,0 +1,137 @@
+\documentclass[runningheads]{llncs}
+
+%\usepackage{algorithmic}
+\newtheorem{defn}{\sc{Definition}}[subsection]
+\newtheorem{nota}{\sc{Notation}}[subsection]
+\title{Using Big Data technologies with P systems}
+\author{Alex Ciobanu\inst{1}, Florentin Ipate\inst{1}}
+
+\authorrunning{A. Ciobanu, F. Ipate}
+
+\institute{Department of Computer Science, University of Pitesti\\
+Str. Targu din Vale 1, 110040 Pitesti, Romania \\
+% \email{alex.ciobanu@gmail.com, raluca.lefticaru@gmail.com, ionutmihainiculescu@gmail.com,}
+\email{florentin.ipate@ifsoft.ro}
+}
+
+\begin{document}
+\maketitle
+
+
+\begin{abstract} 
+In this article we will attempt to calculate all possible evolutions of a P system using map reduce parallelism and perform context dependent rule coverage testing on the P system. This article is mean to expose the scalability possibilities available with the Big Data ecosystem.  \\
+
+
+\textbf{Keywords:} P systems testing, Hadoop, P system derivation tree, Map Reduc. Big Data.
+
+\end{abstract}
+
+
+
+\section{Introduction}
+
+The field of \emph{membrane computing}, which deals with distributed and parallel computing models called \emph{P systems}, has been a rapidly growing research area in the last ten years. Initially coined by Gheorghe P\u{a}un in \cite{Paun00}, P systems have been intensively studied from a computational perspective as many variants have been introduced and investigated and a substantial set of applications have been identified and modeled with such systems \cite{PaunRS10}. P systems, offers the possibility of modeling natural phenomena with a very natural and logical syntax. Natural phenomena is inherently extremely complex and as such the simulation of the P system which model such phenomena is extremely complex due to its shear size and computational power required. At a certain point the computational power and storage capacity of a single machine is simply insufficient for the simulations and testing of such P system then, grid or clustered computing is considered. In an attempt to not reinvent the wheel we will show a method of using the Map Reduce framework, which is designed to function as massively scalable environment for parallel computing, in the simulation and testing of P systems. 
+
+\section{Preliminaries}
+
+\subsection*{Map Reduce}
+
+MapReduce \cite{Google04} is a frame work developed circa 2004 at Google in an attempt to deal with the very large scale data warehousing needs. Although the Google implementation of the Map Reduce ecosystem is proprietary the Apache foundation developed an open source implementation under the project name Hadoop. It is this implementation we will be using for our experiments. Hadoop has many sub components including a file system, coordination applications, meta programming languages and many other components. For the purposes of our discussion we will focus on the map reduce which is the core layer for developing distributed applications. Map Reduce is conceptually based on functional programming paradigms or to be more specific two primitives call map and reduce. The map function acts upon a vector in one data domain and returns a vector in another data domain. If we has an input vector A = { a1,a2...an } and a function F, then map(A,F) = F(A) = A’ where A’ = {F(a1),F(a2)...F(an)}. As functional programming is not side effect based the data types of A and A’ do not have to be in the same domain but the cardinality will inherently be equal. The section primitive borrowed from function programming reduce, also commonly refereed to as fold, acts upon a vector and returns an aggregation of the elements. If we had our vector V = {v1,v2..vn} and our reduce function G, then reduce(V,G)= v’ where v’= G(v1,G(v2(...G(vn))). In this case the type of V and v’ are the same but the cardinality of the input vector is n while the cardinality of the result is 1. For the purposes of Map Reduce it is assumed and necessary that the reduce function G is associative, commutative, and distributive as to allow of sub grouping of the reduce process. 
+
+\subsection*{Parallelism}
+
+Looking at the map and reduce function from a parallelism perspective it is quite natural that they distribute very nicely. Looking at the map function there is no link or sharing between the mapping of individual elements of a vector hence the map function can be executed on a different node of a cluster for each element of a vector with linear scaling, and no performance impact as the number of nodes increases (baring data movement issues). The reduce function shares a similar parallelism capability (assuming associativity, commutativity, and distributivity ) as as little as two elements can be reduced (combine) on each node of the cluster, and given a vector length of n we can theoretically scale to n/2 nodes. it is to note there some communications overheard as reduced data needs to end up at the end on a single node of the cluster to be able to return a single value.  For practical purposes implementation are usually limited to thousands of nodes due to network limitation although larger implementation as suspected to exist at Google and Yahoo.
+
+\subsection*{P system}
+
+TODO
+
+\section{Practical Note}
+
+Given the potential high number of node failure slowdowns during a MapReduce job the infrastructure provided by Hadoop does data mirroring and multiple nodes as well as task fail-over from slow nodes to faster ones amongst its many tasks. For the purposes of our our experiments we will abstract this layer out and out and simply write the map and reduce functions and serve them to the infrastructure. As node failure, network slowdowns, repetition of tasks etc are both unpredictable and abstracted out the scaling results provided in this article come with a potential error factor.
+
+\section{Building a P-system derivation tree with Hadoop \& NoSQL Database}
+
+Developing a derivation tree for a P-system requires the calculation of all possible evolution of each node in the tree recursively. As each node's evolution is absolutely independent of another is calculation can be performed independently and most importantly in parallel. To facilitate the parallelism the Hadoop infrastructure is used to manage all of the complexities and execution of the parallelism. The storage of the P-system and the derivation tree is done in a Key value NoSQL database with the following data structure. 
+
+Do note as described above, keys  are composed of a major component and a minor component, where each can be a string or an List of strings.
+
+The P-system is stored as followed:
+
+The rules are store as tuple of integer array. The first array in the tuple represents the objects consumed by the rule and the second array represents the objects created by the rule. Each array corresponds to a parallel array with the alphabet. Each value in the rule array represents the number of object of alphabet  I that are created or used when applying that particular rule. For example. 
+
+If we had
+Alphabet = [a,b,c,d,e,f]
+Rule = a,2*b,3*c →2*d,1*e 
+
+The array representation of the rule would be:
+
+[ [1,2,3,0,0,0] , [0,0,0,2,1,0] ]
+
+All of the rules for one membrane are stored together in an array as they will always be preceded together. The key structure is:
+
+Major component = rules
+Minor component = <membrane number>
+
+This representation allows all calculations be be executed directly on numbers with using complex data  types and iterators and increasing the efficiency of the code for very complex rules.
+
+The membranes list is maintained (also as an array) but for this demonstration it is ignored to reduce complexity. Inter membrane communication can be simulated using extended versions of the alphabet as per article [3].   
+
+Each multiset is stored as an array of numbers similar to the way rules are stored where each number represents the number of time each object exists in that particular multiset. 
+
+Each node of the derivation tree stores one multiset. But the tree is stored for easier breath searches as that will the preferred method of walking the tree.
+
+Each node of the three has the following key structure
+
+Major Component: List ( Level of tree ,  membrane number )
+Minor Component:  ( Unique id )
+
+For each node of the tree there are two additional data points stored in the database. This first is an enumeration off the children a particular node has. 
+
+Major Component: parent Unique id 
+Minor Component: Null
+
+The second is a hash value of the node values with a pointer to the original node within the tree. This particular element is useful in find duplicates within the tree and adding pointers where duplicates are found to eliminate superfluous calculations.
+
+\section{Experimental Scaling results}
+
+We developed several P-system of significant size and determined the time required to generate a derivation three of 10 levels for a particular P-system. We also varied the number of nodes in the cluster to be able to get an idea of scaling possibilities.
+
+We used a cluster of 1,2,5,10,20,40 nodes with a P-system of a single membrane and 10 000 rules. Alphabet size 1000. This P-system requires 4 Kb to sore a single node hence more then 1000000 nodes can be stored in our database. 
+
+We also also performed an experiment on all 40 nodes and continues to increase the number of rules per membrane to see the amount of time required to create the entire derivation tree. 
+
+\section{Experimental P system testing results}
+
+The derivation three created was used to create simple and context dependent rule coverage test cases for the P-system. On 40 nodes given each P-system in the previous test, the following results we achieved. 
+
+
+\textbf{Acknowledgments.}
+This work was supported by
+
+
+\begin{thebibliography}{99}
+
+\bibitem{Paun00}
+P\u{a}un, G.: Computing with membranes. Journal of Computer and System Sciences 61(1),  108--143 (2000)
+
+\bibitem{Escuela10}
+Escuela, G., Guti\'errez-Naranjo, M.A.: An application of genetic algorithms to
+membrane computing. Proc. of Eighth brainstorming week on membrane computing, Sevilla. 101-108 (2010)
+
+\bibitem{PaunRS10}
+P\u{a}un, G., Rozenberg, G., Salomaa, A. (eds.): The Oxford Handbook of Membrane Computing. Oxford University Press (2010)
+
+\bibitem{Google04}
+Jeffrey Dean and Sanjay Ghemawat: MapReduce: Simplified Data Processing on Large Clusters, Sixth Symposium on Operating System Design and Implementation, December 2004
+ 
+%\bibitem{CiobanuPJP06}
+%Ciobanu, G., P\u{a}un, G., P{\'e}rez-Jim{\'e}nez, M.J. (eds.): Applications of Membrane Computing. Natural Computing Series, Springer (2006)
+
+\bibitem{LefticaruJISTF10}
+R. Lefticaru, F. Ipate, M. Gheorghe. Model checking based test generation from P systems using P-lingua. Romanian Journal of Information Science and Technology, 13(2): 153-168, 2010. Special Issue on Membrane Computing containing selected papers from BWMC 2010.
+
+\end{thebibliography}
+
+\end{document}
+
