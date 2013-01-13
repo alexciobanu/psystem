@@ -172,11 +172,15 @@ public class NodeCalculator
 			}
 			
 			ByteArrayOutputStream bo = null;
+			ByteArrayOutputStream boRules = null;
 			try 
 			{
 				bo = new ByteArrayOutputStream();
+				boRules = new ByteArrayOutputStream();
 				ObjectOutputStream out = new ObjectOutputStream(bo);
+				ObjectOutputStream outRules = new ObjectOutputStream(boRules);
 	            out.writeObject(aMuliset);
+	            outRules.writeObject(aSequence);
 			} catch (IOException e) {
 				e.printStackTrace();
 				break;
@@ -185,7 +189,7 @@ public class NodeCalculator
 			List<String> majorComponents = Arrays.asList(level,membrane);
 			String uuid = UUID.randomUUID().toString();
 			List<String> minorComponents = Arrays.asList(uuid);
-			db.store(majorComponents, minorComponents, bo.toByteArray());
+			db.storeNode(majorComponents, minorComponents, bo.toByteArray(), boRules.toByteArray(),parentID);
 			children.add(uuid);
 		}
 	ByteArrayOutputStream bo2 = null;

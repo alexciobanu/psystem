@@ -26,10 +26,11 @@ public class Hadoop extends Configured implements Tool
     {
         public void map(Key keyArg, IndexedRecord valueArg, Context context) throws IOException, InterruptedException 
         {
+        	String level = (keyArg.getMajorPath()).get(0);
     	    String membrane = (keyArg.getMajorPath()).get(1);  
     	    String uuid = (keyArg.getMinorPath()).get(0);
 	        ByteBuffer temp = (ByteBuffer) valueArg.get(0);      
-	        
+
 		    ByteArrayInputStream bi2 = new ByteArrayInputStream(temp.array());
 	        ObjectInputStream in2 = new ObjectInputStream(bi2);
             long[] currentMultiset = null;
@@ -41,8 +42,13 @@ public class Hadoop extends Configured implements Tool
 			{
 				e.printStackTrace();
 			}
+			
+			int buff = Integer.parseInt( level.substring(5, level.length()) );
+			buff++;
+			String nextLevel= "level"+buff;
+			//context.write(new Text(level), new Text(uuid));
     		NodeCalculator nc = new NodeCalculator(membrane);
-            nc.getAllCombinations(currentMultiset,"level1",uuid);
+            nc.getAllCombinations(currentMultiset,nextLevel,uuid);
         }
     }
 
@@ -59,12 +65,12 @@ public class Hadoop extends Configured implements Tool
 
         job.setInputFormatClass(KVAvroInputFormat.class);
         job.setOutputFormatClass(TextOutputFormat.class);
-        KVInputFormatBase.setFormatterClassName("MyAvroFormatter");
+        KVInputFormatBase.setFormatterClassName("Simulator.MyAvroFormatter");
 
         KVInputFormat.setKVStoreName(args[0]);
-        KVInputFormat.setParentKey(Key.createKey("level0"));
         KVInputFormat.setKVHelperHosts(new String[] { args[1] });
         FileOutputFormat.setOutputPath(job, new Path(args[2]));
+        KVInputFormat.setParentKey(Key.createKey( args[3] ));
 
         boolean success = job.waitForCompletion(true);
         return success ? 0 : 1;
