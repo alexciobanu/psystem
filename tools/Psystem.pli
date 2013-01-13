@@ -1,0 +1,83 @@
+@model<evolution_communication>
+
+def main()
+{
+
+/* Membrane Structure */
+
+@mu = [[]'2[]'3[]'4[]'5[]'6]'0;
+
+/* Initial Multisets */ 
+
+@ms(2) =e;
+@ms(3) =f;
+@ms(4) =h;
+@ms(5) =b;
+@ms(6) =c;
+
+/* Rules */ 
+
+[o,c,u --> o,c,u]'2;
+[o --> o]'2;
+[l,u --> l,u]'2;
+[h,c,l --> h,c,l]'2;
+[u,f --> u,f]'2;
+[g,b --> g,b]'2;
+[q,l,e --> q,l,e]'2;
+[f,b --> f,b]'2;
+[l,f,q --> l,f,q]'2;
+[b --> b]'2;
+[f,g --> f,g]'2;
+[g,h --> g,h]'3;
+[q,l --> q,l]'3;
+[f --> f]'3;
+[b,c,u --> b,c,u]'3;
+[h,f,c --> h,f,c]'3;
+[l --> l]'3;
+[g --> g]'3;
+[g,f,u --> g,f,u]'3;
+[h --> h]'3;
+[b,l --> b,l]'3;
+[c,b,q --> c,b,q]'3;
+[o,b --> o,b]'3;
+[b,e --> b,e]'4;
+[o,q --> o,q]'4;
+[h,f,o --> h,f,o]'4;
+[f,e --> f,e]'4;
+[f,b --> f,b]'4;
+[g --> g]'4;
+[c,e,h --> c,e,h]'4;
+[f,o --> f,o]'4;
+[o --> o]'4;
+[h,e --> h,e]'4;
+[b --> b]'4;
+[g,l,q --> g,l,q]'4;
+[f,l --> f,l]'5;
+[e,h,g --> e,h,g]'5;
+[g,l --> g,l]'5;
+[e --> e]'5;
+[h,g --> h,g]'5;
+[o,u --> o,u]'5;
+[c --> c]'5;
+[q,u,l --> q,u,l]'5;
+[g,f,e --> g,f,e]'5;
+[h,u,b --> h,u,b]'5;
+[q,l,g --> q,l,g]'5;
+[h --> h]'5;
+[e,g --> e,g]'5;
+[l,u --> l,u]'5;
+[u --> u]'6;
+[o,h,g --> o,h,g]'6;
+[q,g,o --> q,g,o]'6;
+[q --> q]'6;
+[b --> b]'6;
+[q,h,f --> q,h,f]'6;
+[e,l,u --> e,l,u]'6;
+[l --> l]'6;
+[l,u --> l,u]'6;
+[c,b,l --> c,b,l]'6;
+[f --> f]'6;
+[g,c,f --> g,c,f]'6;
+[f,g --> f,g]'6;
+
+}

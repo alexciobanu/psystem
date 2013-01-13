@@ -1,0 +1,5 @@
+{
+  "type" : "record",
+  "name" : "dataRecord",
+  "fields" :[ { "name" :"data", "type" :"bytes", "default" :"null" } ] 
+}

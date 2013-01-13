@@ -1,0 +1,14 @@
+@model<evolution_communication>
+
+def main()
+{
+
+ @mu = [[]'1]'0;
+ @ms(1) = a*4,b*3,c*5;
+ 
+ [a,b --> a,b]'1;
+ [a,c --> a,c]'1;
+ [a --> a]'1;
+ [b --> b]'1;
+ [c --> c]'1;
+}

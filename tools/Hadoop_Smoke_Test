@@ -1,0 +1,24 @@
+HADOOP SMOKE TEST
+ssh machine1
+vi /usr/lib/hadoop/conf/hadoop-env.sh
+      JAVA_HOME=/usr/lib/jvm/j2sdk1.6-oracle/jre/
+sudo -u hdfs hadoop fs -mkdir /user/a
+sudo -u hdfs hadoop fs -chown a:a /user/a
+echo "hello world goodbye world" > file01
+echo "hello hadoop goodbye hadoop" > file02
+echo "hello alex goodbye alex" > file03
+hadoop fs -mkdir /user/a/wordcount/input 
+hadoop fs -copyFromLocal file01 /user/a/wordcount/input
+hadoop fs -copyFromLocal file02 /user/a/wordcount/input
+hadoop fs -copyFromLocal file03 /user/a/wordcount/input
+"Download WordCount.java to machine"
+mkdir classes
+javac -classpath /usr/lib/hadoop/hadoop-core.jar:/usr/lib/hadoop/lib/commons-cli-1.2.jar -d classes WordCount.java
+jar -cvf wordcount.jar -C classes/ .
+hadoop jar wordcount.jar WordCount /user/a/wordcount/input /user/a/wordcount/output
+hadoop fs -cat /user/a/wordcount/output/part-r-00000
+
+NOSQL SMOKE TEST
+ssh machine1
+javac -cp kv-2.0.23/lib/kvclient-2.0.23.jar:examples kv-2.0.23/examples/hello/*.java 
+java -cp kv-2.0.23/lib/kvclient-2.0.23.jar:kv-2.0.23/examples hello.HelloBigDataWorld -host machine1 -port 5000 -store PsystemStore 

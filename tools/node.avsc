@@ -1,0 +1,8 @@
+{
+  "type" : "record",
+  "name" : "nodeRecord",
+  "fields" : [ { "name" :"data", "type" :"bytes", "default" :"null" }, 
+              { "name" :"rules", "type" :"bytes", "default" :"null" },
+	      { "name" :"parent", "type" :"string", "default" :"null" },
+              { "name" :"duplicate", "type" :"string", "default" :"" }
+	        ] }
