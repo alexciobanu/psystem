@@ -7,33 +7,37 @@ public class MainTools
 	/*public static void main(String[] args) throws IOException, ClassNotFoundException
 	{
 		PsystemInterface ps = new PsystemInterface();
-		//ps.printAllKeys();
-		ps.printLevelSize("level4");
-		//viewLevel("level1");
+		//ps.printAlphabet();
+		ps.printAllKeys();
+		//ps.printLevelSize("level4");
+		//viewLevel("level0");
 	}*/
+	static PsystemInterface ps;
+	
 	public static void main(String[] args) throws IOException, ClassNotFoundException
 	{
-		if (args.length<1)
+		if (args.length<3)
 		{
 			System.out.println("Usage:");
-			System.out.println("\t load <PLI File> : Load the PLI file into NOSQL DB");
-			System.out.println("\t initCDRC : Calculates all CDRC cmibinations and load int DB");
-			System.out.println("\t delete : Deletes the Psystem from the database DB");
-			System.out.println("\t deleteLevel <level>: Deletes a level of the derivation tree from DB");
-			System.out.println("\t show : Displays the Psystem in the database");
-			System.out.println("\t showLevel <level>: displays a level of the derivation tree from DB");
-			System.out.println("\t showLevelSize <level>: displays the size of a level in the derivation tree");
-			System.out.println("\t showKeys : displays all of the keys in the DB");
+			System.out.println("<store> <host> load <PLI File> : Load the PLI file into NOSQL DB");
+			System.out.println("<store> <host> initCDRC : Calculates all CDRC cmibinations and load int DB");
+			System.out.println("<store> <host> delete : Deletes the Psystem from the database DB");
+			System.out.println("<store> <host> deleteLevel <level>: Deletes a level of the derivation tree");
+			System.out.println("<store> <host> show : Displays the Psystem in the database");
+			System.out.println("<store> <host> showLevel <level>: displays a level of the derivation tree");
+			System.out.println("<store> <host> showLevelSize <level>: displays the level size in derivation tree");
+			System.out.println("<store> <host> showKeys : displays all of the keys in the DB");
 		}
 		else
 		{
-			if ("load".equalsIgnoreCase(args[0]))
+			ps = new PsystemInterface(args[0],args[1]);
+			if ("load".equalsIgnoreCase(args[2]))
 			{
-				if (args[1]!=null)
+				if (args[3]!=null)
 				{
 					System.out.println("loading psystem");
-					PsystemInterface ps = new PsystemInterface();
-					ps.grabPsystem(args[1]);
+					
+					ps.grabPsystem(args[3]);
 					System.out.println("Done loading psystem");
 				}
 				else
@@ -41,21 +45,21 @@ public class MainTools
 					System.out.println("please specify the PLI file to import");
 				}
 			}	
-			else if ("initCDRC".equalsIgnoreCase(args[0]))
+			else if ("initCDRC".equalsIgnoreCase(args[2]))
 			{
 				System.out.println("initializing the CDRC pairs");
-				initCDRC();
+				initCDRC(args[0],args[1]);
 				System.out.println("Done initializing the CDRC pairs");
 			}
-			else if ("delete".equalsIgnoreCase(args[0]))
+			else if ("delete".equalsIgnoreCase(args[2]))
 			{
 				System.out.println("deleting the P-system from the database");
 				deletePsystem();
 				System.out.println("Done deleting the P-system from the database");
 			}
-			else if ("deleteLevel".equalsIgnoreCase(args[0]))
+			else if ("deleteLevel".equalsIgnoreCase(args[2]))
 			{
-				if (args[1]!=null)
+				if (args[3]!=null)
 				{
 					System.out.println("deleting the derivation tree level from the database");
 					deleteTreeLevel(args[1]);
@@ -66,22 +70,21 @@ public class MainTools
 					System.out.println("please specify the level to delete");
 				}
 			}
-			else if ("show".equalsIgnoreCase(args[0]))
+			else if ("show".equalsIgnoreCase(args[2]))
 			{
 				System.out.println("Displaying the P system to screen");
 				viewPsystem();
 				System.out.println("Done Displaying the P system to screen");
 			}
-			else if ("showKeys".equalsIgnoreCase(args[0]))
+			else if ("showKeys".equalsIgnoreCase(args[2]))
 			{
 				System.out.println("Displaying the database keys");
-				PsystemInterface ps = new PsystemInterface();
 				ps.printAllKeys();
 				System.out.println("Done Displaying the database keys");
 			}
-			else if ("showLevel".equalsIgnoreCase(args[0]))
+			else if ("showLevel".equalsIgnoreCase(args[2]))
 			{
-				if (args[1]!=null)
+				if (args[3]!=null)
 				{
 					System.out.println("showing the derivation tree level from the database");
 					deleteTreeLevel(args[1]);
@@ -92,13 +95,12 @@ public class MainTools
 					System.out.println("please specify the level to display");
 				}
 			}
-			else if ("showLevelSize".equalsIgnoreCase(args[0]))
+			else if ("showLevelSize".equalsIgnoreCase(args[2]))
 			{
-				if (args[1]!=null)
+				if (args[3]!=null)
 				{
 					System.out.println("showing the derivation tree level size from the database");
-					PsystemInterface ps = new PsystemInterface();
-			        ps.printLevelSize(args[0]);
+			        ps.printLevelSize(args[3]);
 					System.out.println("Done showing the derivation tree level size from the database");
 				}
 				else
@@ -113,28 +115,25 @@ public class MainTools
 		}
 	}
 	
-	public static void initCDRC()
+	public static void initCDRC(String storeName, String hosts)
 	{
-		FindCdrcPairs cdrc = new FindCdrcPairs();
+		FindCdrcPairs cdrc = new FindCdrcPairs(storeName, hosts);
 		cdrc.getContextDependentRules();
 	}
 	
 	public static void deleteTreeLevel(String level) throws IOException, ClassNotFoundException
 	{
-		PsystemInterface ps = new PsystemInterface();
 		ps.deleteLevel(level);
 	}
 	
 	public static void viewLevel(String level) throws IOException, ClassNotFoundException
 	{
-		PsystemInterface ps = new PsystemInterface();
 		ps.printMultiset(level);
         ps.printLevelSize(level);
 	}
 	
 	public static void viewPsystem() throws IOException, ClassNotFoundException
 	{
-		PsystemInterface ps = new PsystemInterface();
 	    ps.printAlphabet();
 	    ps.printMembranes();
 		ps.printAllRules();
@@ -143,7 +142,6 @@ public class MainTools
 	
 	public static void deletePsystem() throws IOException, ClassNotFoundException
 	{
-		PsystemInterface ps = new PsystemInterface();
 		ps.deletePsystem();
 	}	
 }

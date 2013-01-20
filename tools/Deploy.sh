@@ -207,11 +207,11 @@ function createAndRunConfigurationFile
 function addSchemas
 {
 	echo "Copying needed files to the first machine and running addSchema"
-	declare -a args=("node.avsc" "schema.avsc" "addSchema.sh" $user@${machines[0]}":"$targetDir)
+	declare -a args=("node.avsc" "schema.avsc" "addSchema.sh" $user@${manchines[0]}":"$targetDir)
 	scp "${args[@]}"
-	declare -a args=($user@${machines[0]} "chmod +x $targetDir/addSchema.sh")
+	declare -a args=($user@${manchines[0]} "chmod +x $targetDir/addSchema.sh")
 	ssh "${args[@]}"
-	declare -a args=($user@${machines[0]} "cd $targetDir; ./addSchema.sh")
+	declare -a args=($user@${manchines[0]} "cd $targetDir; ./addSchema.sh")
 	ssh "${args[@]}"
 	if [ $? -ne 0 ]; 
 	then 	
@@ -335,7 +335,7 @@ else
 	;;
 	"delete" )
 		stoptNoSQLInstances
-		checkForFail "Stopping the NoSQL instances"
+		#checkForFail "Stopping the NoSQL instances"
 		deleteDeployment
 		checkForFail "Deleting the previous deployment"
 		echo "Done Deleting Instances"

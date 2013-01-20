@@ -29,6 +29,7 @@ import Interfaces.NodeData;
 public class cdrcCalculatorTest 
 {
 	static Key key;
+	static DatabaseAccess db;
 	
 	public static void main(String[] args) throws IOException, ClassNotFoundException 
 	{
@@ -49,7 +50,7 @@ public class cdrcCalculatorTest
 
                 
         ArrayList<long[]> allChildren = getChildren(uuid,nextLevel,membrane);
-        DatabaseAccess db = new DatabaseAccess();
+        DatabaseAccess db = new DatabaseAccess("PsystemStore","machine1:5000");
         List<String> majorComponent = Arrays.asList("CDRCrules",membrane);
         for(long[] aChild: allChildren)
         {
@@ -88,7 +89,6 @@ public class cdrcCalculatorTest
 		{	
 			String curentLevel= "level"+levelNumber;
 			List<String> majorComponent = Arrays.asList(curentLevel, membrane);
-			DatabaseAccess db = new DatabaseAccess();
 			NodeData temp = db.retrieveNode(majorComponent,uuid);
 			String parent = temp.parent;
 		
@@ -110,7 +110,6 @@ public class cdrcCalculatorTest
 	public static ArrayList<long[]> getChildren(String uuid,String level, String membrane) throws IOException, ClassNotFoundException
 	{
 		ArrayList<long[]> allChildren = new ArrayList<long[]>();
-		DatabaseAccess db = new DatabaseAccess();
 		byte[] temp = db.retrieve(uuid,null);
 		ByteArrayInputStream bi2 = new ByteArrayInputStream(temp);
         ObjectInputStream in2 = new ObjectInputStream(bi2);
@@ -127,7 +126,6 @@ public class cdrcCalculatorTest
 	public static long[] getChildRules(String uuid,String level, String membrane) throws IOException, ClassNotFoundException
 	{
 		List<String> majorComponents = Arrays.asList(level,membrane);
-		DatabaseAccess db = new DatabaseAccess();
 		NodeData temp = db.retrieveNode(majorComponents,uuid);
 		byte[] rules = temp.rules;
 		ByteArrayInputStream bi2 = new ByteArrayInputStream(rules);

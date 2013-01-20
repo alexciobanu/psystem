@@ -15,10 +15,9 @@ import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
 
+import InputFormat.NoSQLInputFormat;
+
 import oracle.kv.Key;
-import oracle.kv.hadoop.KVAvroInputFormat;
-import oracle.kv.hadoop.KVInputFormat;
-import oracle.kv.hadoop.KVInputFormatBase;
 
 public class Hadoop extends Configured implements Tool 
 {
@@ -46,8 +45,10 @@ public class Hadoop extends Configured implements Tool
 			int buff = Integer.parseInt( level.substring(5, level.length()) );
 			buff++;
 			String nextLevel= "level"+buff;
-			//context.write(new Text(level), new Text(uuid));
-    		NodeCalculator nc = new NodeCalculator(membrane);
+			//context.write(new Text(level), new Text(membrane));
+			String storeName = context.getConfiguration().get("NoSQLDB.input.Store");
+			String hosts = context.getConfiguration().get("NoSQLDB.input.Hosts");
+    		NodeCalculator nc = new NodeCalculator(membrane,storeName,hosts);
             nc.getAllCombinations(currentMultiset,nextLevel,uuid);
         }
     }
@@ -63,14 +64,14 @@ public class Hadoop extends Configured implements Tool
 
         job.setMapperClass(Map.class);
 
-        job.setInputFormatClass(KVAvroInputFormat.class);
+        job.setInputFormatClass(NoSQLInputFormat.class);
         job.setOutputFormatClass(TextOutputFormat.class);
-        KVInputFormatBase.setFormatterClassName("Simulator.MyAvroFormatter");
 
-        KVInputFormat.setKVStoreName(args[0]);
-        KVInputFormat.setKVHelperHosts(new String[] { args[1] });
+        NoSQLInputFormat.setStoreName(job, args[0]);
+        NoSQLInputFormat.setMajorKey(job, args[3]);
+        NoSQLInputFormat.setHelperHosts(job, args[1]);
+        
         FileOutputFormat.setOutputPath(job, new Path(args[2]));
-        KVInputFormat.setParentKey(Key.createKey( args[3] ));
 
         boolean success = job.waitForCompletion(true);
         return success ? 0 : 1;

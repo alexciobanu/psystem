@@ -10,9 +10,16 @@ import Interfaces.DatabaseAccess;
 
 public class FindCdrcPairs 
 {
+	DatabaseAccess db;
+	
+	FindCdrcPairs(String storeName, String hosts)
+	{
+		db = new DatabaseAccess(storeName, hosts);
+	}
+	
 	void getContextDependentRules()
 	{
-		DatabaseAccess db = new DatabaseAccess();
+
 		byte[] membranesRecords = (byte[]) db.retrieve("membranes", null); 
 		ByteArrayInputStream bi = new ByteArrayInputStream(  membranesRecords );
         ObjectInputStream in;

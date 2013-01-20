@@ -4,10 +4,10 @@ import string
 import random
 import math
 
-NumberOfRules = 15
-NumberOfMembranes = 5
+NumberOfRules = 100
+NumberOfMembranes = 3
 NumberOfObjects = 10
-NumberOfObjectInInitialMultiset = int(NumberOfObjects/10)
+NumberOfObjectInInitialMultiset = int(NumberOfObjects/2)
 
 def PrintHedder(f): 
 	f.write ('''@model<evolution_communication>

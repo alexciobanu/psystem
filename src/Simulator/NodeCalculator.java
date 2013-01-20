@@ -21,9 +21,9 @@ public class NodeCalculator
 	DatabaseAccess db;
 	
 	@SuppressWarnings("unchecked")
-	public NodeCalculator(String theMembrane)
+	public NodeCalculator(String theMembrane, String storeName, String hosts)
 	{
-		db=new DatabaseAccess();
+		db=new DatabaseAccess(storeName,hosts);
 		membrane=theMembrane;
 		byte[] data = db.retrieve("rules", membrane);
     	ByteArrayInputStream bi = new ByteArrayInputStream(data);
@@ -146,6 +146,7 @@ public class NodeCalculator
 				allPossibilities.add(aCombination);
 			}
 		}
+		//System.out.println("Get Multiset" + level + uuid);
 		getMulisets(allPossibilities,level,uuid);
 		return allPossibilities.size();
 	}

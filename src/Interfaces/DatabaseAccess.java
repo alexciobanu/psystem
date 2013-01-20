@@ -10,6 +10,7 @@ import org.apache.avro.Schema;
 import org.apache.avro.generic.GenericData;
 import org.apache.avro.generic.GenericRecord;
 
+import oracle.kv.Consistency;
 import oracle.kv.Direction;
 import oracle.kv.Durability;
 import oracle.kv.KVStore;
@@ -31,23 +32,23 @@ public class DatabaseAccess
 	GenericAvroBinding binding;
 	GenericAvroBinding nodeBinding;
 	
-	public static DatabaseAccess getInstance() 
+	public static DatabaseAccess getInstance(String storeName, String hosts) 
 	{
 		if(instance == null) 
 	    {
-			instance = new DatabaseAccess();
+			instance = new DatabaseAccess(storeName,hosts);
 	    }
 		return instance;
 	}
 	
-	public DatabaseAccess()
+	public DatabaseAccess(String storeName, String hosts)
 	{
-		initDatabase();
+		initDatabase(storeName,hosts);
 	}
 	
-	void initDatabase()
+	void initDatabase(String storeName, String hosts)
 	{
-		KVStoreConfig config = new KVStoreConfig("PsystemStore", "machine1:5000");
+		KVStoreConfig config = new KVStoreConfig(storeName, hosts);
         store = KVStoreFactory.getStore(config);
         AvroCatalog catalog = store.getAvroCatalog(); 
         
@@ -83,6 +84,7 @@ public class DatabaseAccess
 	
 	public int storeNode(Object Majorkey, Object MinorKey, Object data, Object rules, String parent)
 	{
+		//System.out.println("Storing Node" + Majorkey + MinorKey);
 		Key myKey = makeKey(Majorkey, MinorKey);    
         GenericData.Record record = new GenericData.Record(nodeSchema);
         ByteBuffer buffer = ByteBuffer.wrap((byte []) data);
@@ -192,7 +194,7 @@ public class DatabaseAccess
 	
 	public void printAllKeys()
 	{
-		Iterator<KeyValueVersion> myItterator = store.storeIterator( Direction.UNORDERED,0,null,null,null);
+		Iterator<KeyValueVersion> myItterator = store.storeIterator( Direction.UNORDERED,0,null,null,null,Consistency.ABSOLUTE,0,null);
 		while (myItterator.hasNext())
 		{
 			System.out.println(myItterator.next().getKey());

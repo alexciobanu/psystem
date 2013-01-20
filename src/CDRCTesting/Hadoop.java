@@ -19,18 +19,19 @@ import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
 
+import InputFormat.NoSQLInputFormat;
 import Interfaces.DatabaseAccess;
 import Interfaces.NodeData;
 
 import oracle.kv.Key;
-import oracle.kv.hadoop.KVAvroInputFormat;
-import oracle.kv.hadoop.KVInputFormat;
-import oracle.kv.hadoop.KVInputFormatBase;
 
 public class Hadoop extends Configured implements Tool 
 {
     public static class Map extends Mapper<Key, IndexedRecord, Text, Text> 
     {
+    	
+    	DatabaseAccess db;
+    	
         public void map(Key keyArg, IndexedRecord valueArg, Context context) throws IOException, InterruptedException 
         {
         	String level = (keyArg.getMajorPath()).get(0);
@@ -56,8 +57,9 @@ public class Hadoop extends Configured implements Tool
 				e.printStackTrace();
 			}
 			
-			
-	        DatabaseAccess db = new DatabaseAccess();
+			String storeName = context.getConfiguration().get("NoSQLDB.input.Store");
+			String hosts = context.getConfiguration().get("NoSQLDB.input.Hosts");
+	        db = new DatabaseAccess(storeName, hosts);
 	        List<String> majorComponent = Arrays.asList("CDRCrules",membrane);
 	        for(long[] aChild: allChildren)
 	        {
@@ -103,7 +105,6 @@ public class Hadoop extends Configured implements Tool
     		{	
     			String curentLevel= "level"+levelNumber;
     			List<String> majorComponent = Arrays.asList(curentLevel, membrane);
-    			DatabaseAccess db = new DatabaseAccess();
     			NodeData temp = db.retrieveNode(majorComponent,uuid);
     			String parent = temp.parent;
     		
@@ -125,7 +126,6 @@ public class Hadoop extends Configured implements Tool
     	public ArrayList<long[]> getChildren(String uuid,String level, String membrane) throws IOException, ClassNotFoundException
     	{
     		ArrayList<long[]> allChildren = new ArrayList<long[]>();
-    		DatabaseAccess db = new DatabaseAccess();
     		byte[] temp = db.retrieve(uuid,null);
     		ByteArrayInputStream bi2 = new ByteArrayInputStream(temp);
             ObjectInputStream in2 = new ObjectInputStream(bi2);
@@ -142,7 +142,6 @@ public class Hadoop extends Configured implements Tool
     	public long[] getChildRules(String uuid,String level, String membrane) throws IOException, ClassNotFoundException
     	{
     		List<String> majorComponents = Arrays.asList(level,membrane);
-    		DatabaseAccess db = new DatabaseAccess();
     		NodeData temp = db.retrieveNode(majorComponents,uuid);
     		byte[] rules = temp.rules;
     		ByteArrayInputStream bi2 = new ByteArrayInputStream(rules);
@@ -164,14 +163,13 @@ public class Hadoop extends Configured implements Tool
 
         job.setMapperClass(Map.class);
 
-        job.setInputFormatClass(KVAvroInputFormat.class);
+        job.setInputFormatClass(NoSQLInputFormat.class);
         job.setOutputFormatClass(TextOutputFormat.class);
-        KVInputFormatBase.setFormatterClassName("Simulator.MyAvroFormatter");
 
-        KVInputFormat.setKVStoreName(args[0]);
-        KVInputFormat.setKVHelperHosts(new String[] { args[1] });
+        NoSQLInputFormat.setStoreName(job, args[0]);
+        NoSQLInputFormat.setMajorKey(job, args[3]);
+        NoSQLInputFormat.setHelperHosts(job, args[1]);
         FileOutputFormat.setOutputPath(job, new Path(args[2]));
-        KVInputFormat.setParentKey(Key.createKey( args[3] ));
 
         boolean success = job.waitForCompletion(true);
         return success ? 0 : 1;

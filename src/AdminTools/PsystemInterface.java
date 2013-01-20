@@ -26,9 +26,9 @@ public class PsystemInterface
 {
 	DatabaseAccess db;
 	
-	public PsystemInterface()
+	public PsystemInterface(String storeName, String hosts)
 	{
-		db= new DatabaseAccess();
+		db= new DatabaseAccess(storeName,hosts);
 	}
 	
 	public void close()
@@ -322,9 +322,10 @@ public class PsystemInterface
 			
 			//Initial Multiset
 			int alphabetSize = alphabet.length;	
-			String uuid = UUID.randomUUID().toString();
+			
 			for(Membrane a : ps.getMembraneStructure().getAllMembranes())
 			{
+				String uuid = UUID.randomUUID().toString();
 				MultiSet<String> initialMultiset= ps.getInitialMultiSets().get(a.getLabel());
 				if (initialMultiset==null)
 					break;

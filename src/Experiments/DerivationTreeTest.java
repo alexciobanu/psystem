@@ -29,7 +29,7 @@ public class DerivationTreeTest
 	
 	public static void main(String[] args) throws IOException, ClassNotFoundException 
 	{
-		PsystemInterface ps = new PsystemInterface();
+		PsystemInterface ps = new PsystemInterface("PsystemStore", "machine1:5000");
 
 		GenericRecord entry = getRecord();
 	    Key k2 = key;
@@ -41,7 +41,8 @@ public class DerivationTreeTest
         ObjectInputStream in2 = new ObjectInputStream(bi2);
         long[] currentMultiset = (long[]) in2.readObject();
         
-        NodeCalculator nc = new NodeCalculator(membrane);
+        //TODO - Fix Context null as this will break this code from running
+        NodeCalculator nc = new NodeCalculator(membrane, "PsystemStore", "machine1:5000");
         nc.getAllCombinations(currentMultiset,"level2",uuid);
         
         ps.printChildren(uuid);
