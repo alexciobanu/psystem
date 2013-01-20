@@ -4,14 +4,6 @@ import java.io.IOException;
 
 public class MainTools 
 {	
-	/*public static void main(String[] args) throws IOException, ClassNotFoundException
-	{
-		PsystemInterface ps = new PsystemInterface();
-		//ps.printAlphabet();
-		ps.printAllKeys();
-		//ps.printLevelSize("level4");
-		//viewLevel("level0");
-	}*/
 	static PsystemInterface ps;
 	
 	public static void main(String[] args) throws IOException, ClassNotFoundException
@@ -87,7 +79,7 @@ public class MainTools
 				if (args[3]!=null)
 				{
 					System.out.println("showing the derivation tree level from the database");
-					deleteTreeLevel(args[1]);
+					ps.printMultiset(args[3]);
 					System.out.println("Done showing the derivation tree level from the database");
 				}
 				else
