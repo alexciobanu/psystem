@@ -34,18 +34,37 @@ public class NoSQLInputFormat<K,V> extends InputFormat<K, V>
 	{
 		String MajorKey = arg0.getConfiguration().get("NoSQLDB.input.Key");
 		Key myKey = Key.createKey( MajorKey );
+
 		String storeName = arg0.getConfiguration().get("NoSQLDB.input.Store");
 		String hosts = arg0.getConfiguration().get("NoSQLDB.input.Hosts");
-		
+		int numberOfKeysPerSplit = arg0.getConfiguration().getInt("NoSQLDB.input.KeysPerSplit", 1);
 		KVStoreConfig config = new KVStoreConfig(storeName, hosts);
         KVStore store = KVStoreFactory.getStore(config);
 		List<InputSplit> inputs = new ArrayList<InputSplit>();
 		Iterator<KeyValueVersion> myItterator = store.storeIterator( Direction.UNORDERED,0,myKey,null,null);
+		ArrayList<Key> keysOfASplit = new ArrayList<Key>();
+		int i=0;
+		Key aKey;
 		while (myItterator.hasNext())
 		{
-			Key key = myItterator.next().getKey();
-			InputSplit anInput = new NoSQLSplit( key.getMajorPath().get(1), key.getMinorPath().get(0) );
-			inputs.add(anInput);   
+			if (i<numberOfKeysPerSplit)
+			{
+				aKey = myItterator.next().getKey();
+				keysOfASplit.add(aKey);
+				i++;
+			}
+			else
+			{	
+				InputSplit anInput = new NoSQLSplit( keysOfASplit );
+				inputs.add(anInput);
+				keysOfASplit = new ArrayList<Key>();
+				i=0;
+			}
+		}
+		if (i!=0)
+		{
+			InputSplit anInput = new NoSQLSplit( keysOfASplit );
+			inputs.add(anInput);
 		}
 		return inputs;
 	}
@@ -63,6 +82,11 @@ public class NoSQLInputFormat<K,V> extends InputFormat<K, V>
 	public static void setHelperHosts(Job job,String hosts )
 	{
 		job.getConfiguration().set("NoSQLDB.input.Hosts", hosts);
+	}
+	
+	public static void setKeysPerTask(Job job, int numberOfKeys)
+	{
+		job.getConfiguration().setInt("NoSQLDB.input.KeysPerSplit", numberOfKeys);
 	}
 	
 }

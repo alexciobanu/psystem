@@ -54,7 +54,7 @@ public class MainTools
 				if (args[3]!=null)
 				{
 					System.out.println("deleting the derivation tree level from the database");
-					deleteTreeLevel(args[1]);
+					deleteTreeLevel(args[3]);
 					System.out.println("Done deleting the derivation tree level from the database");
 				}
 				else

@@ -1,8 +1,7 @@
 package InputFormat;
 
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.List;
+import java.util.ArrayList;
 
 import oracle.kv.KVStore;
 import oracle.kv.KVStoreConfig;
@@ -19,27 +18,25 @@ import org.apache.hadoop.mapreduce.TaskAttemptContext;
 
 public class NoSQLRecordReader<K, V> extends RecordReader<K, V> 
 {
-	K CurrentKey;
-	V CurentValue;
+	ArrayList<Key> keys;
+	int currentIndex;
+	int NumberOfKeys;
 	KVStore store;
-	boolean read;
+	GenericAvroBinding binding;
 	
-	@SuppressWarnings("unchecked")
 	@Override
 	public void initialize(InputSplit arg0, TaskAttemptContext arg1) throws IOException, InterruptedException 
 	{
 		String storeName = arg1.getConfiguration().get("NoSQLDB.input.Store");
 		String hosts = arg1.getConfiguration().get("NoSQLDB.input.Hosts");
-		String majorKey = arg1.getConfiguration().get("NoSQLDB.input.Key");
 		
 		KVStoreConfig config = new KVStoreConfig(storeName, hosts);
         store = KVStoreFactory.getStore(config);
         NoSQLSplit split = (NoSQLSplit) arg0; 
-		List<String> majorPath = Arrays.asList(majorKey,split.membrane);
-		Key currentKey = Key.createKey(majorPath,split.uuid);
-        ValueVersion inputData = store.get( currentKey );
-        System.out.println(split.membrane + " : " +  split.uuid);
-        System.out.println(currentKey);
+        
+        keys = split.getKeys();
+        NumberOfKeys = keys.size();
+        currentIndex=-1;
                 
         AvroCatalog catalog = store.getAvroCatalog(); 
         String s = " { \"type\" : \"record\",\"name\" : \"nodeRecord\", \"fields\" : ["
@@ -51,11 +48,7 @@ public class NoSQLRecordReader<K, V> extends RecordReader<K, V>
         Schema.Parser parser = new Schema.Parser();
         parser.parse(s);
         Schema schema = parser.getTypes().get("nodeRecord"); 
-        GenericAvroBinding binding = catalog.getGenericBinding(schema);
-
-        CurentValue = (V) binding.toObject(inputData.getValue());
-        CurrentKey = (K) currentKey;
-        read=false;
+        binding = catalog.getGenericBinding(schema);
 	}
 	
 	@Override
@@ -64,32 +57,36 @@ public class NoSQLRecordReader<K, V> extends RecordReader<K, V>
         store.close();
 	}
 
+	@SuppressWarnings("unchecked")
 	@Override
 	public K getCurrentKey() throws IOException, InterruptedException 
 	{
-		return CurrentKey;
+		System.out.println("GETTIG KEY:" + keys.get(currentIndex));
+		return (K) keys.get(currentIndex);
 	}
 
+	@SuppressWarnings("unchecked")
 	@Override
 	public V getCurrentValue() throws IOException, InterruptedException 
 	{
-		read=true;
-		return CurentValue;
+		ValueVersion inputData = store.get( keys.get(currentIndex) );
+		return (V) binding.toObject( inputData.getValue() );
 	}
 
 	@Override
 	public float getProgress() throws IOException, InterruptedException 
 	{
-		return 1;
+		return currentIndex/NumberOfKeys;
 	}
 
 	@Override
 	public boolean nextKeyValue() throws IOException, InterruptedException 
 	{
-		if (read)
-			return false;
-		else
+		currentIndex++;
+		if (currentIndex<NumberOfKeys)
 			return true;
+		else
+			return false;
 	}
 
 

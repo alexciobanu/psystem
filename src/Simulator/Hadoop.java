@@ -70,6 +70,7 @@ public class Hadoop extends Configured implements Tool
         NoSQLInputFormat.setStoreName(job, args[0]);
         NoSQLInputFormat.setMajorKey(job, args[3]);
         NoSQLInputFormat.setHelperHosts(job, args[1]);
+        NoSQLInputFormat.setKeysPerTask(job, 20);
         
         FileOutputFormat.setOutputPath(job, new Path(args[2]));
 
