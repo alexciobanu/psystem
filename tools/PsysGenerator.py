@@ -3,11 +3,12 @@
 import string
 import random
 import math
+import sys
 
-NumberOfRules = 100
-NumberOfMembranes = 3
-NumberOfObjects = 10
-NumberOfObjectInInitialMultiset = int(NumberOfObjects/2)
+NumberOfRules = 0
+NumberOfMembranes = 0
+NumberOfObjects = 0
+NumberOfObjectInInitialMultiset = 5 #int(NumberOfObjects/2)
 
 def PrintHedder(f): 
 	f.write ('''@model<evolution_communication>
@@ -56,37 +57,66 @@ def PrintInitialMultiset(f,obj):
 
 def PrintRules(f,obj):
 	membrane=0
+	
 	while membrane<NumberOfMembranes:
 		membrane+=1
 		i=0;
+		allRules = set()
 		while i<NumberOfRules:
 			i+=1
 			LeftObj = random.sample(obj,random.randint(1,3))
 			RightObj = random.sample(obj,random.randint(1,5))
+			while set(LeftObj)==set(RightObj):
+				RightObj = random.sample(obj,random.randint(1,5))
 			string = "["
 			for j in LeftObj:
 				string+=j
 	 			string+=','
 			string=string.strip(',')
 			string += " --> "
-			for j in LeftObj:
+			for j in RightObj:
 				string+=j
 	 			string+=','
 			string=string.strip(',')
-			string += "]'{0};\n".format(membrane+1)
-			f.write(string)
+			string += "]'{0};\n".format(membrane)
+			if string not in allRules:
+				f.write(string)
+				allRules.add(string)
+			else:
+				i-=1;
 
 def PrintTail(f):
 	f.write ('\n}')
 
-OutputFile = open('Psystem.pli', 'w')
-obj=[]
-PrintHedder(OutputFile)
-PrintMembranes(OutputFile)
-GenerateObjects(obj)
-PrintInitialMultiset(OutputFile,obj)
-PrintRules(OutputFile,obj)
-PrintTail(OutputFile)
+
+def main(argv=None):
+	global NumberOfMembranes 
+	global NumberOfObjects 
+	global NumberOfRules 
+	if argv is None:
+		argv = sys.argv
+	if len(argv) != 4:
+		print "usage: " + argv[0] + " <NumMembranes> <NumObjects> <NumRulesPerMembrane> "
+		exit(1)
+	NumberOfMembranes = int(argv[1])
+	NumberOfObjects = int(argv[2])
+	NumberOfRules = int(argv[3])
+
+	if NumberOfMembranes == 0 or NumberOfObjects == 0 or NumberOfRules == 0:
+		print "Please select numbers greater than 0 for the fields"
+		exit(1)
+
+	OutputFile = open('Psystem.pli', 'w')
+	obj=[]
+	PrintHedder(OutputFile)
+	PrintMembranes(OutputFile)
+	GenerateObjects(obj)
+	PrintInitialMultiset(OutputFile,obj)
+	PrintRules(OutputFile,obj)
+	PrintTail(OutputFile)
+
+if __name__ == "__main__":
+	main()
 
 
 
