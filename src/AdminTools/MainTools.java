@@ -2,9 +2,13 @@ package AdminTools;
 
 import java.io.IOException;
 
+import Interfaces.AbstractDatabase;
+import Interfaces.OracleNoSQLDatabase;
+
 public class MainTools 
 {	
-	static PsystemInterface ps;
+	//static PsystemInterface ps;
+	static AbstractDatabase db;
 	
 	public static void main(String[] args) throws IOException, ClassNotFoundException
 	{
@@ -19,17 +23,18 @@ public class MainTools
 			System.out.println("<store> <host> showLevel <level>: displays a level of the derivation tree");
 			System.out.println("<store> <host> showLevelSize <level>: displays the level size in derivation tree");
 			System.out.println("<store> <host> showKeys : displays all of the keys in the DB");
+			System.out.println("<store> <host> showCDRC : displays all of the CDRC pairs in the DB");
+			System.out.println("<store> <host> showCDRCSize : displays the number of the CDRC pairs in the DB");
 		}
 		else
 		{
-			ps = new PsystemInterface(args[0],args[1]);
+			db = new OracleNoSQLDatabase(args[0],args[1]);
 			if ("load".equalsIgnoreCase(args[2]))
 			{
 				if (args[3]!=null)
 				{
 					System.out.println("loading psystem");
-					
-					ps.grabPsystem(args[3]);
+					PsystemTools.grabPsystem(args[3]);
 					System.out.println("Done loading psystem");
 				}
 				else
@@ -54,7 +59,7 @@ public class MainTools
 				if (args[3]!=null)
 				{
 					System.out.println("deleting the derivation tree level from the database");
-					deleteTreeLevel(args[3]);
+					db.deleteLevel( Integer.parseInt(args[3]));
 					System.out.println("Done deleting the derivation tree level from the database");
 				}
 				else
@@ -64,23 +69,17 @@ public class MainTools
 			}
 			else if ("show".equalsIgnoreCase(args[2]))
 			{
-				System.out.println("Displaying the P system to screen");
 				viewPsystem();
-				System.out.println("Done Displaying the P system to screen");
 			}
 			else if ("showKeys".equalsIgnoreCase(args[2]))
 			{
-				System.out.println("Displaying the database keys");
-				ps.printAllKeys();
-				System.out.println("Done Displaying the database keys");
+				db.printAllElements();
 			}
 			else if ("showLevel".equalsIgnoreCase(args[2]))
 			{
 				if (args[3]!=null)
 				{
-					System.out.println("showing the derivation tree level from the database");
-					ps.printMultiset(args[3]);
-					System.out.println("Done showing the derivation tree level from the database");
+					PsystemTools.printLevel( Integer.parseInt( args[3] ));
 				}
 				else
 				{
@@ -92,14 +91,24 @@ public class MainTools
 				if (args[3]!=null)
 				{
 					System.out.println("showing the derivation tree level size from the database");
-			        ps.printLevelSize(args[3]);
-					System.out.println("Done showing the derivation tree level size from the database");
+					db.printLevelSize( Integer.parseInt( args[3] ) );
 				}
 				else
 				{
 					System.out.println("please specify the level to display");
 				}
 			}
+			else if ("showCDRC".equalsIgnoreCase(args[2]))
+			{
+				//TODO CRDC 
+		        //ps.printCDRCpairs();
+			}
+			
+			else if ("showCDRCSize".equalsIgnoreCase(args[2]))
+			{
+				//TODO CDRC
+				//ps.printCDRCpairsSize();
+			}		
 			else
 			{
 				System.out.println("Option not recoginzed please run command without options to see help menu");
@@ -109,31 +118,25 @@ public class MainTools
 	
 	public static void initCDRC(String storeName, String hosts)
 	{
-		FindCdrcPairs cdrc = new FindCdrcPairs(storeName, hosts);
-		cdrc.getContextDependentRules();
-	}
-	
-	public static void deleteTreeLevel(String level) throws IOException, ClassNotFoundException
-	{
-		ps.deleteLevel(level);
+		//TODO CDRC
+		//FindCdrcPairs cdrc = new FindCdrcPairs(storeName, hosts);
+		//cdrc.getContextDependentRules();
 	}
 	
 	public static void viewLevel(String level) throws IOException, ClassNotFoundException
 	{
-		ps.printMultiset(level);
-        ps.printLevelSize(level);
+		
+		PsystemTools.printLevel(Integer.parseInt(level));
+		db.printLevelSize(Integer.parseInt(level));
 	}
 	
 	public static void viewPsystem() throws IOException, ClassNotFoundException
 	{
-	    ps.printAlphabet();
-	    ps.printMembranes();
-		ps.printAllRules();
-        ps.printMultiset("level1");
+		PsystemTools.printPsystem();
 	}
 	
 	public static void deletePsystem() throws IOException, ClassNotFoundException
 	{
-		ps.deletePsystem();
+		db.deletePsystem();
 	}	
 }

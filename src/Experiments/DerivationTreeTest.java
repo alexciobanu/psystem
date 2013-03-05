@@ -1,83 +1,48 @@
 package Experiments;
 
-import java.io.ByteArrayInputStream;
-import java.io.File;
 import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.nio.ByteBuffer;
-import java.util.Iterator;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
-import org.apache.avro.Schema;
-import org.apache.avro.generic.GenericData;
-import org.apache.avro.generic.GenericRecord;
-
-import AdminTools.PsystemInterface;
-import Simulator.NodeCalculator;
-
-import oracle.kv.Direction;
-import oracle.kv.KVStore;
-import oracle.kv.KVStoreConfig;
-import oracle.kv.KVStoreFactory;
-import oracle.kv.Key;
-import oracle.kv.KeyValueVersion;
-import oracle.kv.avro.AvroCatalog;
-import oracle.kv.avro.GenericAvroBinding;
+import AdminTools.PsystemTools;
+import DerivationTreeGenerator.ApplyAllRules;
+import DerivationTreeGenerator.BrutForce;
+import DerivationTreeGenerator.ChildrenCalculator;
+import Interfaces.AbstractDatabase;
+import Interfaces.MultiMembraneMultiset;
+import Interfaces.NodeData;
+import Interfaces.OracleNoSQLDatabase;
 
 public class DerivationTreeTest 
 {
-	static Key key;
-	
 	public static void main(String[] args) throws IOException, ClassNotFoundException 
 	{
-		PsystemInterface ps = new PsystemInterface("PsystemStore", "machine1:5000");
+		int level = 0;
+		String[] membranes = {"1"}; 
+		AbstractDatabase db = new OracleNoSQLDatabase("kvstore","localhost:5000");
 
-		GenericRecord entry = getRecord();
-	    Key k2 = key;
-	    String membrane = (k2.getMajorPath()).get(1);
-	    String uuid = (k2.getMinorPath()).get(0);
-	    
-        ByteBuffer temp = (ByteBuffer) entry.get(0);
-	    ByteArrayInputStream bi2 = new ByteArrayInputStream(temp.array());
-        ObjectInputStream in2 = new ObjectInputStream(bi2);
-        long[] currentMultiset = (long[]) in2.readObject();
+		PsystemTools.grabPsystem("/home/a/Workspace/p2.pli");	
+		List<String> IDS = db.retriveLevelIDs(level,membranes[0]);
+		NodeData aNode = db.RetrieveNode(IDS.get(0),level,membranes[0]);
+		int[] aMultiset = aNode.multiset;
+		
+		PsystemTools.printPsystem();
+		
+		ChildrenCalculator calc = new BrutForce();
+		List<int[]> possiblilities = calc.findAllChildren(aMultiset, membranes, db);
         
-        //TODO - Fix Context null as this will break this code from running
-        NodeCalculator nc = new NodeCalculator(membrane, "PsystemStore", "machine1:5000");
-        nc.getAllCombinations(currentMultiset,"level2",uuid);
-        
-        ps.printChildren(uuid);
-	    ps.printAlphabet();
-	    ps.printMembranes();
-		ps.printAllRules();
-        ps.printMultiset("level0");
-        ps.printLevelSize("level0");
-		ps.printMultiset("level1");
-        ps.printLevelSize("level1");
-		ps.printMultiset("level2");
-        ps.printLevelSize("level2");
-	}
-	
-	static GenericRecord getRecord() throws IOException
-	{
-
-		KVStoreConfig config = new KVStoreConfig("kvstore", "localhost:5000");
-		KVStore store = KVStoreFactory.getStore(config);
-        Iterator<KeyValueVersion> levelIterator = store.storeIterator(Direction.UNORDERED, 0, Key.createKey("level1"), null, null);
-        AvroCatalog catalog = store.getAvroCatalog(); 
-        File f = new File("/home/a/kv-2.0.23/node.avsc");
-        Schema.Parser parser = new Schema.Parser();
-        parser.parse(f);
-        Schema schema = parser.getTypes().get("nodeRecord"); 
-        GenericAvroBinding binding = catalog.getGenericBinding(schema);
-        while( levelIterator.hasNext())
+		for(int[] aPoss: possiblilities)
 		{
-	        GenericRecord inputRecord = new GenericData.Record(schema);
-	        KeyValueVersion bla = levelIterator.next();
-	        inputRecord  = binding.toObject(bla.getValue());
-	        key = bla.getKey();
-			return  inputRecord;
+			System.out.println( Arrays.toString( aPoss ) );
 		}
-		return null;
+		System.out.println( "---------------------" );
+		ArrayList<MultiMembraneMultiset> configurations = ApplyAllRules.getMulisets(possiblilities,membranes[0] , db);
+        
+		for(MultiMembraneMultiset aConfig :  configurations)
+		{
+			int[] results = aConfig.getMulisetForMembrane(membranes[0]);
+			System.out.println( Arrays.toString( results ) );
+		}
 	}
-	
 }

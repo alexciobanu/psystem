@@ -3,6 +3,9 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 import org.apache.avro.generic.IndexedRecord;
 import org.apache.hadoop.fs.Path;
@@ -15,7 +18,13 @@ import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
 
+import DerivationTreeGenerator.ApplyAllRules;
+import DerivationTreeGenerator.BrutForce;
+import DerivationTreeGenerator.ChildrenCalculator;
 import InputFormat.NoSQLInputFormat;
+import Interfaces.AbstractDatabase;
+import Interfaces.MultiMembraneMultiset;
+import Interfaces.OracleNoSQLDatabase;
 
 import oracle.kv.Key;
 
@@ -25,31 +34,39 @@ public class Hadoop extends Configured implements Tool
     {
         public void map(Key keyArg, IndexedRecord valueArg, Context context) throws IOException, InterruptedException 
         {
-        	String level = (keyArg.getMajorPath()).get(0);
+        	//String level = (keyArg.getMajorPath()).get(0);
     	    String membrane = (keyArg.getMajorPath()).get(1);  
     	    String uuid = (keyArg.getMinorPath()).get(0);
 	        ByteBuffer temp = (ByteBuffer) valueArg.get(0);      
 
 		    ByteArrayInputStream bi2 = new ByteArrayInputStream(temp.array());
 	        ObjectInputStream in2 = new ObjectInputStream(bi2);
-            long[] currentMultiset = null;
+            int[] currentMultiset = null;
 			try 
 			{
-				currentMultiset = (long[]) in2.readObject();
+				currentMultiset = (int[]) in2.readObject();
 			} 
 			catch (ClassNotFoundException e) 
 			{
 				e.printStackTrace();
 			}
 			
-			int buff = Integer.parseInt( level.substring(5, level.length()) );
-			buff++;
-			String nextLevel= "level"+buff;
-			//context.write(new Text(level), new Text(membrane));
+			//int buff = Integer.parseInt( level.substring(5, level.length()) );
+			//buff++;
+			//String nextLevel= "level"+buff;
 			String storeName = context.getConfiguration().get("NoSQLDB.input.Store");
 			String hosts = context.getConfiguration().get("NoSQLDB.input.Hosts");
-    		NodeCalculator nc = new NodeCalculator(membrane,storeName,hosts);
-            nc.getAllCombinations(currentMultiset,nextLevel,uuid);
+			AbstractDatabase db = new OracleNoSQLDatabase(storeName,hosts);
+			
+			ChildrenCalculator calc = new BrutForce();
+			String[] membranesArray = {membrane};
+			List<int[]> possiblilities = calc.findAllChildren(currentMultiset, membranesArray, db);
+			ArrayList<MultiMembraneMultiset> configurations = ApplyAllRules.getMulisets(possiblilities,membrane , db);
+			for(MultiMembraneMultiset aConfig :  configurations)
+			{
+				int[] results = aConfig.getMulisetForMembrane(membrane);
+				context.write(new Text(uuid), new Text(Arrays.toString( results )));
+			}
         }
     }
 
@@ -70,7 +87,14 @@ public class Hadoop extends Configured implements Tool
         NoSQLInputFormat.setStoreName(job, args[0]);
         NoSQLInputFormat.setMajorKey(job, args[3]);
         NoSQLInputFormat.setHelperHosts(job, args[1]);
-        NoSQLInputFormat.setKeysPerTask(job, 20);
+        NoSQLInputFormat.setKeysPerTask(job, 300);
+        
+        int milliSeconds = 1000*60*60*3; 
+        job.getConfiguration().setLong("mapred.task.timeout", milliSeconds);
+        job.getConfiguration().setLong("mapred.skip.map.max.skip.records", Long.MAX_VALUE);
+        job.getConfiguration().setLong("mapred.map.max.attempts", 10);
+        job.getConfiguration().setLong("mapred.skip.attempts.to.start.skipping", 3);
+        job.getConfiguration().setLong("mapred.map.failures.maxpercent", 50);
         
         FileOutputFormat.setOutputPath(job, new Path(args[2]));
 

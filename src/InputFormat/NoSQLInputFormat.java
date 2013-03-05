@@ -10,7 +10,6 @@ import oracle.kv.KVStore;
 import oracle.kv.KVStoreConfig;
 import oracle.kv.KVStoreFactory;
 import oracle.kv.Key;
-import oracle.kv.KeyValueVersion;
 
 import org.apache.hadoop.mapreduce.InputFormat;
 import org.apache.hadoop.mapreduce.InputSplit;
@@ -41,20 +40,26 @@ public class NoSQLInputFormat<K,V> extends InputFormat<K, V>
 		KVStoreConfig config = new KVStoreConfig(storeName, hosts);
         KVStore store = KVStoreFactory.getStore(config);
 		List<InputSplit> inputs = new ArrayList<InputSplit>();
-		Iterator<KeyValueVersion> myItterator = store.storeIterator( Direction.UNORDERED,0,myKey,null,null);
+		Iterator<Key> myItterator = store.storeKeysIterator( Direction.UNORDERED,0,myKey,null,null);
 		ArrayList<Key> keysOfASplit = new ArrayList<Key>();
 		int i=0;
 		Key aKey;
+		//int numSplits=0;
 		while (myItterator.hasNext())
 		{
 			if (i<numberOfKeysPerSplit)
 			{
-				aKey = myItterator.next().getKey();
+				aKey = myItterator.next();
 				keysOfASplit.add(aKey);
 				i++;
 			}
 			else
 			{	
+				/*numSplits++;
+				if (numSplits % 1000 == 0)
+				{
+					System.out.println("We have: " + inputs.size()+1 + " splits");
+				}*/
 				InputSplit anInput = new NoSQLSplit( keysOfASplit );
 				inputs.add(anInput);
 				keysOfASplit = new ArrayList<Key>();

@@ -11,6 +11,7 @@ import java.util.UUID;
 
 import Interfaces.DatabaseAccess;
 
+@Deprecated
 public class NodeCalculator 
 {	
 	ArrayList<long [][]> membraneRules;
@@ -42,6 +43,8 @@ public class NodeCalculator
 			e.printStackTrace();
 		}
 		numberofRules = membraneRules.size();
+		//System.out.println("There are: " + numberofRules + "rules in membrane:" + theMembrane );
+		//System.out.println("They are \n" + Arrays.deepToString(membraneRules.toArray() ) );
 	}
 	
 	boolean checkCombination(long[] aCombination)

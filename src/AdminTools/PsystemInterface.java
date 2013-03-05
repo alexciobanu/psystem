@@ -21,7 +21,7 @@ import org.gcn.plinguacore.util.psystem.rule.IRule;
 import Interfaces.DatabaseAccess;
 import Interfaces.NodeData;
 
-
+@Deprecated
 public class PsystemInterface 
 {
 	DatabaseAccess db;
@@ -56,10 +56,26 @@ public class PsystemInterface
 		}
 	}
 	
+	public void printCDRCpairs()
+	{
+		List<String> data = db.multiRetrievePartialMajor("CDRCrules");
+		for(String aPair: data)
+		{
+			System.out.println(aPair);
+		}
+			
+	}
+	
+	public void printCDRCpairsSize()
+	{
+		int number = db.countObjects("CDRCrules");
+		System.out.println("Final Count:" +number);
+	}
+	
 	public void printLevelSize(String level)  
 	{
 		int number = db.countObjects(level);
-		System.out.println(number);
+		System.out.println("Final Count:" +number);
 	}
 	
 	public void printAllKeys()  
@@ -121,7 +137,6 @@ public class PsystemInterface
 	{
 		deleteLevel("level0");
 		deleteCDRC();
-		db.multiDelete("tempRules");
 		db.multiDelete("rules");
 		db.multiDelete("membranes");
 		db.multiDelete("alphabet");
@@ -180,8 +195,10 @@ public class PsystemInterface
         myMultiset = db.multiRetrieveNodeSchema(level);
 		for(NodeData aMultiset : myMultiset)
 		{
-    	    ByteArrayInputStream bi = new ByteArrayInputStream(aMultiset.data);
-    	    ByteArrayInputStream bi2 = new ByteArrayInputStream(aMultiset.rules);
+    	    ByteArrayInputStream bi = new ByteArrayInputStream(null);
+    	    ByteArrayInputStream bi2 = new ByteArrayInputStream(null);
+    	    //ByteArrayInputStream bi = new ByteArrayInputStream(aMultiset.data);
+    	    //ByteArrayInputStream bi2 = new ByteArrayInputStream(aMultiset.rules);
             ObjectInputStream in;
             ObjectInputStream in2;
             long[] data=null;
@@ -221,17 +238,19 @@ public class PsystemInterface
 	{
 		try
 		{
-			List<byte[]> myRules;
-	        myRules =  db.multiRetrieve("rules",null);
-	        for (byte[] entry : myRules ) 
-	    	{
-	    	    //Value v = entry.getValue().getValue();
-	    	    //Key k = entry.getKey();
-	    	    ByteArrayInputStream bi = new ByteArrayInputStream(entry);
-	            ObjectInputStream in = new ObjectInputStream(bi);
+			byte[] myRule;
+			byte[] membranesRecords = (byte[]) db.retrieve("membranes", null); 
+			ByteArrayInputStream bi = new ByteArrayInputStream(  membranesRecords );
+	        ObjectInputStream in= new ObjectInputStream(bi);
+	        String[] membranes = (String[]) in.readObject();
+	        for(int i=0;i<membranes.length;i++)
+	        {
+	        	myRule =  db.retrieve("rules",membranes[i]);
+	        	System.out.println("Rules for membrane" + membranes[i]);
+	    	    ByteArrayInputStream bi2 = new ByteArrayInputStream(myRule);
+	            ObjectInputStream in2 = new ObjectInputStream(bi2);
 				@SuppressWarnings("unchecked")
-				ArrayList<long [][]> rules = (ArrayList<long [][]>) in.readObject();
-				//System.out.println(k.toString());
+				ArrayList<long [][]> rules = (ArrayList<long [][]>) in2.readObject();
 				for (long[][] bla : rules)
 		        {
 		        	for(int k1=0;k1<bla[0].length;k1++)

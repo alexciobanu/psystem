@@ -61,7 +61,7 @@ public class NoSQLRecordReader<K, V> extends RecordReader<K, V>
 	@Override
 	public K getCurrentKey() throws IOException, InterruptedException 
 	{
-		System.out.println("GETTIG KEY:" + keys.get(currentIndex));
+		//System.out.println("GETTIG KEY:" + keys.get(currentIndex));
 		return (K) keys.get(currentIndex);
 	}
 

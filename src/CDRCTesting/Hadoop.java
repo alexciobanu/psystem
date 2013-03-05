@@ -39,6 +39,10 @@ public class Hadoop extends Configured implements Tool
     	    String uuid = (keyArg.getMinorPath()).get(0);
 	        ByteBuffer temp = (ByteBuffer) valueArg.get(1);
 	        
+			String storeName = context.getConfiguration().get("NoSQLDB.input.Store");
+			String hosts = context.getConfiguration().get("NoSQLDB.input.Hosts");
+	        db = new DatabaseAccess(storeName, hosts);
+	        
 			int buff = Integer.parseInt( level.substring(5, level.length()) );
 			buff++;
 			String nextLevel= "level"+buff;
@@ -46,7 +50,7 @@ public class Hadoop extends Configured implements Tool
 		    ByteArrayInputStream bi2 = new ByteArrayInputStream(temp.array());
 	        ObjectInputStream in2 = new ObjectInputStream(bi2);
             long[] currentRule = null;
-            ArrayList<long[]> allChildren =null;
+            ArrayList<int[]> allChildren =null;
 			try 
 			{
 				currentRule = (long[]) in2.readObject();
@@ -57,11 +61,8 @@ public class Hadoop extends Configured implements Tool
 				e.printStackTrace();
 			}
 			
-			String storeName = context.getConfiguration().get("NoSQLDB.input.Store");
-			String hosts = context.getConfiguration().get("NoSQLDB.input.Hosts");
-	        db = new DatabaseAccess(storeName, hosts);
 	        List<String> majorComponent = Arrays.asList("CDRCrules",membrane);
-	        for(long[] aChild: allChildren)
+	        for(int[] aChild: allChildren)
 	        {
 	        	for(int i=0;i<currentRule.length;i++)
 	        	{
@@ -85,8 +86,9 @@ public class Hadoop extends Configured implements Tool
 										e.printStackTrace();
 									}
 	        						output += Arrays.toString(currentRule) + ", " + Arrays.toString(aChild);
+	        						String outputKey = "Membrane: " + membrane + " Pair: " + cdrcPair.toString();
 	        						db.delete(majorComponent,cdrcPair);
-	        						context.write(new Text(cdrcPair.toString()), new Text(output));
+	        						context.write(new Text(outputKey), new Text(output));
 	        						//System.out.println(output);
 	        					}
 	        					
@@ -113,19 +115,19 @@ public class Hadoop extends Configured implements Tool
     			
     			majorComponent = Arrays.asList(previousLevel, membrane);
     			NodeData parentNode = db.retrieveNode(majorComponent, parent);
-    			byte[] rules = parentNode.rules;
-    			ByteArrayInputStream bi2 = new ByteArrayInputStream(rules);
-    	        ObjectInputStream in2 = new ObjectInputStream(bi2);
-    			long[] rulesArray = (long[]) in2.readObject();
-    			output+= Arrays.toString( rulesArray) + ", ";
+    			int[] rules = parentNode.rules;
+    			//ByteArrayInputStream bi2 = new ByteArrayInputStream(rules);
+    	        //ObjectInputStream in2 = new ObjectInputStream(bi2);
+    			//int[] rulesArray = (int[]) in2.readObject();
+    			output+= Arrays.toString( rules) + ", ";
     		}
     		return output;
     		
     	}
     	
-    	public ArrayList<long[]> getChildren(String uuid,String level, String membrane) throws IOException, ClassNotFoundException
+    	public ArrayList<int[]> getChildren(String uuid,String level, String membrane) throws IOException, ClassNotFoundException
     	{
-    		ArrayList<long[]> allChildren = new ArrayList<long[]>();
+    		ArrayList<int[]> allChildren = new ArrayList<int[]>();	
     		byte[] temp = db.retrieve(uuid,null);
     		ByteArrayInputStream bi2 = new ByteArrayInputStream(temp);
             ObjectInputStream in2 = new ObjectInputStream(bi2);
@@ -133,21 +135,21 @@ public class Hadoop extends Configured implements Tool
     		ArrayList<String> children = (ArrayList<String>) in2.readObject();
             for(int i=0;i<children.size();i++)
             {
-            	long[] childRules = getChildRules(children.get(i),level,membrane);
+            	int[] childRules = getChildRules(children.get(i),level,membrane);
             	allChildren.add(childRules);
             }
             return allChildren;
     	}
     	
-    	public long[] getChildRules(String uuid,String level, String membrane) throws IOException, ClassNotFoundException
+    	public int[] getChildRules(String uuid,String level, String membrane) throws IOException, ClassNotFoundException
     	{
     		List<String> majorComponents = Arrays.asList(level,membrane);
     		NodeData temp = db.retrieveNode(majorComponents,uuid);
-    		byte[] rules = temp.rules;
-    		ByteArrayInputStream bi2 = new ByteArrayInputStream(rules);
-            ObjectInputStream in2 = new ObjectInputStream(bi2);
-    		long[] rulesArray = (long[]) in2.readObject();
-    		return rulesArray;
+    		int[] rules = temp.rules;
+    		//ByteArrayInputStream bi2 = new ByteArrayInputStream(rules);
+            //ObjectInputStream in2 = new ObjectInputStream(bi2);
+    		//long[] rulesArray = (long[]) in2.readObject();
+    		return rules;
     	}
         
     }
@@ -156,7 +158,7 @@ public class Hadoop extends Configured implements Tool
     {
         Job job = new Job(getConf());
         job.setJarByClass(Hadoop.class);
-        job.setJobName("Psystem Evolution");
+        job.setJobName("CDRC Testing");
 
         job.setOutputKeyClass(Text.class);
         job.setOutputValueClass(Text.class);
@@ -169,8 +171,17 @@ public class Hadoop extends Configured implements Tool
         NoSQLInputFormat.setStoreName(job, args[0]);
         NoSQLInputFormat.setMajorKey(job, args[3]);
         NoSQLInputFormat.setHelperHosts(job, args[1]);
+        NoSQLInputFormat.setKeysPerTask(job, 10);
+        
         FileOutputFormat.setOutputPath(job, new Path(args[2]));
 
+        int milliSeconds = 1000*60*60*3; 
+        job.getConfiguration().setLong("mapred.task.timeout", milliSeconds);
+        job.getConfiguration().setLong("mapred.skip.map.max.skip.records", Long.MAX_VALUE);
+        job.getConfiguration().setLong("mapred.map.max.attempts", 1);
+        job.getConfiguration().setLong("mapred.skip.attempts.to.start.skipping", 1);
+        job.getConfiguration().setLong("mapreduce.map.failures.maxpercent", 50);
+        
         boolean success = job.waitForCompletion(true);
         return success ? 0 : 1;
     }

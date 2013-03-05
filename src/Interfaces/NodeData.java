@@ -2,8 +2,8 @@ package Interfaces;
 
 public class NodeData 
 {
-	public byte[] data;
-	public byte[] rules;
+	public int[] multiset;
+	public int[] rules;
 	public String parent;
-	public String duplicate;
+	public String duplicate; 
 }

@@ -26,7 +26,7 @@ def PrintMembranes(f):
 	while (i<NumberOfMembranes):
 		i+=1
 		string+='[]\''
-		string+=str(i+1)
+		string+=str(i)
 	string+="]'0;\n\n/* Initial Multisets */ \n\n"	
 	f.write(string)
 
@@ -45,7 +45,7 @@ def PrintInitialMultiset(f,obj):
 	i=0;
 	while i<NumberOfMembranes:
 		i+=1
-		string= "@ms({0}) =".format(i+1)
+		string= "@ms({0}) =".format(i)
 		RandomObjects=random.sample(obj,NumberOfObjectInInitialMultiset)
 		for st in RandomObjects:
 			string+=st 

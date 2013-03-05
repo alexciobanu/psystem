@@ -5,6 +5,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.SortedMap;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.avro.Schema;
 import org.apache.avro.generic.GenericData;
@@ -23,6 +24,7 @@ import oracle.kv.ValueVersion;
 import oracle.kv.avro.AvroCatalog;
 import oracle.kv.avro.GenericAvroBinding;
 
+@Deprecated
 public class DatabaseAccess 
 {
 	private static DatabaseAccess instance = null;
@@ -49,6 +51,10 @@ public class DatabaseAccess
 	void initDatabase(String storeName, String hosts)
 	{
 		KVStoreConfig config = new KVStoreConfig(storeName, hosts);
+		config.setRequestTimeout(120, TimeUnit.SECONDS);
+		config.setSocketReadTimeout(120, TimeUnit.SECONDS);
+		config.setSocketOpenTimeout(120, TimeUnit.SECONDS);
+	
         store = KVStoreFactory.getStore(config);
         AvroCatalog catalog = store.getAvroCatalog(); 
         
@@ -133,8 +139,8 @@ public class DatabaseAccess
         GenericRecord inputRecord = new GenericData.Record(nodeSchema);
         inputRecord  = nodeBinding.toObject(myInput.getValue());
         NodeData aNode = new NodeData();
-        aNode.data = ((ByteBuffer) inputRecord.get(0)).array();
-        aNode.rules = ((ByteBuffer) inputRecord.get(1)).array();
+        //aNode.data = ((ByteBuffer) inputRecord.get(0)).array();
+        //aNode.rules = ((ByteBuffer) inputRecord.get(1)).array();
         aNode.parent = inputRecord.get(2).toString();
 		return aNode;
 	}
@@ -154,6 +160,24 @@ public class DatabaseAccess
 		return rawValues;
 	}
 	
+	/*
+	 * This function just retrieves the keys and not the values 
+	 * 
+	 */
+	
+	public List<String> multiRetrievePartialMajor(Object Majorkey)
+	{
+		Key myKey = makeKey(Majorkey, null);
+		List<String> rawValues = new ArrayList<String>();
+		Iterator<KeyValueVersion> myItterator = store.storeIterator( Direction.UNORDERED,0,myKey,null,null);
+		while (myItterator.hasNext())
+		{
+			Key akey = myItterator.next().getKey();
+			rawValues.add( akey.toString() );
+		}
+		return rawValues;
+	}
+	
 	public List<NodeData> multiRetrieveNodeSchema(Object Majorkey)
 	{
 		Key myKey = makeKey(Majorkey, null);
@@ -164,8 +188,8 @@ public class DatabaseAccess
 	        GenericRecord inputRecord = new GenericData.Record(nodeSchema);
 	        inputRecord  = nodeBinding.toObject(myItterator.next().getValue());
 	        NodeData aNode = new NodeData();
-	        aNode.data = ((ByteBuffer) inputRecord.get(0)).array();
-	        aNode.rules = ((ByteBuffer) inputRecord.get(1)).array();
+	        //aNode.multiset = (((ByteBuffer) inputRecord.get(0)).array());
+	        //aNode.rules = ((ByteBuffer) inputRecord.get(1)).array();
 	        aNode.parent = inputRecord.get(2).toString();
 			rawValues.add( aNode );
 		}
@@ -176,11 +200,13 @@ public class DatabaseAccess
 	{
 		Key myKey = makeKey(Majorkey, null);
 		int numElements=0;
-		Iterator<KeyValueVersion> myItterator = store.storeIterator( Direction.UNORDERED,0,myKey,null,null);
+		Iterator<Key> myItterator = store.storeKeysIterator( Direction.UNORDERED,0,myKey,null,null);
 		while (myItterator.hasNext())
 		{
 			numElements++;
 			myItterator.next();
+			if (numElements % 200000 == 0)
+				System.out.println("Progress: " + numElements);
 		}
 		return numElements;
 	}
