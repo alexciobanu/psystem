@@ -17,14 +17,8 @@ public class BrutForce implements ChildrenCalculator
 	
 	@SuppressWarnings("unchecked")
 	@Override
-	public List<int[]> findAllChildren(int[] multiset, String[] membranes, AbstractDatabase db) 
+	public List<int[]> findAllChildren(int[] multiset, String membrane, AbstractDatabase db) 
 	{
-		if (membranes.length>1)
-		{
-			System.out.println("this function does not support multiple membranes");
-			return null;
-		}
-		membrane= membranes[0];
 		rules = (ArrayList<MultiMembraneMultiset>)  db.retriveMembraneElement(membrane, "left");
 		currentMultiset = multiset;
 		alphabetSize = currentMultiset.length;

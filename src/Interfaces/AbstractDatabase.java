@@ -2,6 +2,8 @@ package Interfaces;
 
 import java.util.List;
 
+import oracle.kv.Value;
+
 public interface AbstractDatabase 
 {
 
@@ -24,6 +26,8 @@ public interface AbstractDatabase
 	String[] retriveMembraneList();
 	
 	void StoreNode(String NodeId, int level, String membrane, NodeData theNode);
+	
+	public Value createNodeValue(NodeData theNode);
 	
 	NodeData RetrieveNode(String NodeId, int level, String membrane);
 	

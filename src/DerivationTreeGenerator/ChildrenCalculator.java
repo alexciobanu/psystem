@@ -6,5 +6,5 @@ import Interfaces.AbstractDatabase;
 
 public interface ChildrenCalculator 
 {
-	public List<int []> findAllChildren(int[] multiset, String[] membranes, AbstractDatabase db);
+	public List<int []> findAllChildren(int[] multiset, String membranes, AbstractDatabase db);
 }

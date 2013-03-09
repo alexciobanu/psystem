@@ -21,7 +21,6 @@ import org.apache.hadoop.mapreduce.TaskAttemptContext;
 
 public class NoSQLInputFormat<K,V> extends InputFormat<K, V> 
 {
-	
 	@Override
 	public RecordReader<K, V> createRecordReader(InputSplit arg0, TaskAttemptContext arg1) throws IOException, InterruptedException 
 	{

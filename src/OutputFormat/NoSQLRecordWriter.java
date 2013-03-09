@@ -2,24 +2,51 @@ package OutputFormat;
 
 import java.io.IOException;
 
-import org.apache.hadoop.mapred.RecordWriter;
-import org.apache.hadoop.mapred.Reporter;
+import oracle.kv.KVStore;
+import oracle.kv.KVStoreConfig;
+import oracle.kv.KVStoreFactory;
+import oracle.kv.Key;
+import oracle.kv.Value;
 
-public class NoSQLRecordWriter<K,V> implements RecordWriter<K, V> 
+import org.apache.hadoop.mapreduce.RecordWriter;
+import org.apache.hadoop.mapreduce.TaskAttemptContext;
+
+public class NoSQLRecordWriter<K,V> extends RecordWriter<K, V> 
 {
+	
+	KVStore store;
+	String attemptID;
 
-	@Override
-	public void close(Reporter arg0) throws IOException 
+	public NoSQLRecordWriter(String id, String storeName, String hosts)
 	{
-		// TODO Auto-generated method stub
-		
+		KVStoreConfig config = new KVStoreConfig(storeName, hosts);
+        store = KVStoreFactory.getStore(config);
+        attemptID = id;
 	}
 
 	@Override
 	public void write(K arg0, V arg1) throws IOException 
 	{
-		// TODO Auto-generated method stub
-		
+		Key key;
+		Value value;
+		if  ((arg0 instanceof Key) && (arg1 instanceof Value))
+		{
+			key=(Key) arg0;
+			value=(Value) arg1;
+		}
+		else
+		{
+			System.out.println("Non Compatible Key type");
+			throw new IOException();
+		}
+		store.put(key, value);
+		(NoSQLOutputFormat.addedKeys.get(attemptID)).add(key);
+	}
+
+	@Override
+	public void close(TaskAttemptContext arg0) throws IOException, InterruptedException 
+	{
+		store.close();
 	}
 
 }

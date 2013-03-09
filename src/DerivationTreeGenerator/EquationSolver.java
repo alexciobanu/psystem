@@ -8,7 +8,7 @@ public class EquationSolver implements ChildrenCalculator
 {
 
 	@Override
-	public List<int[]> findAllChildren(int[] multiset, String[] Membranes, AbstractDatabase db) 
+	public List<int[]> findAllChildren(int[] multiset, String membrane, AbstractDatabase db) 
 	{
 		
 		return null;

@@ -347,6 +347,34 @@ public class OracleNoSQLDatabase implements AbstractDatabase {
         store.put(myKey, KVvalue ); 
 
 	}
+	
+	
+	public Value createNodeValue(NodeData theNode)
+	{
+		ByteArrayOutputStream boMultiset = null;
+		ByteArrayOutputStream boRules = null;
+		try 
+		{
+			boMultiset = new ByteArrayOutputStream();
+			boRules = new ByteArrayOutputStream();
+			ObjectOutputStream outMultiset = new ObjectOutputStream(boMultiset);
+			ObjectOutputStream outRules = new ObjectOutputStream(boRules);
+            outMultiset.writeObject(theNode.multiset);
+            outRules.writeObject(theNode.rules);
+		} catch (IOException e) 
+		{
+			e.printStackTrace();
+		}
+        GenericData.Record record = new GenericData.Record(nodeSchema);
+        ByteBuffer buffer = ByteBuffer.wrap((byte []) boMultiset.toByteArray());
+        ByteBuffer buffer2 = ByteBuffer.wrap((byte []) boRules.toByteArray());
+        record.put("multiset", buffer);
+        record.put("rules",buffer2);
+        record.put("duplicate", "");
+        record.put("parent", theNode.parent);
+        Value KVvalue = nodeBinding.toValue(record);
+        return KVvalue;
+	}
 
 	@Override
 	public NodeData RetrieveNode(String NodeId, int level, String membrane) 
