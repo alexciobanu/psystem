@@ -452,11 +452,16 @@ public class OracleNoSQLDatabase implements AbstractDatabase {
 	{
 		deleteLevel(0);
 		Key myKey;
+		String[] membranes = retriveMembraneList();
+        for(int i=0;i<membranes.length;i++)
+        {
+    		myKey = Key.createKey( Arrays.asList("membrane",membranes[i]) );
+    		store.multiDelete(myKey, null, null);
+        }	
 		myKey = Key.createKey("membranes");
 		store.multiDelete(myKey, null, null);
 		myKey = Key.createKey("alphabet");
 		store.multiDelete(myKey, null, null);
-		
 	}
 	
 	@Override

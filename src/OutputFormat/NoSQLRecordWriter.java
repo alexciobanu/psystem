@@ -29,14 +29,14 @@ public class NoSQLRecordWriter<K,V> extends RecordWriter<K, V>
 	{
 		Key key;
 		Value value;
-		if  ((arg0 instanceof Key) && (arg1 instanceof Value))
+		if  ((arg0 instanceof KeyWritable) && (arg1 instanceof Value))
 		{
-			key=(Key) arg0;
+			key = ((KeyWritable) arg0).getKey();
 			value=(Value) arg1;
 		}
 		else
 		{
-			System.out.println("Non Compatible Key type");
+			System.out.println("Non Compatible Key type or Value type");
 			throw new IOException();
 		}
 		store.put(key, value);
@@ -44,7 +44,7 @@ public class NoSQLRecordWriter<K,V> extends RecordWriter<K, V>
 	}
 
 	@Override
-	public void close(TaskAttemptContext arg0) throws IOException, InterruptedException 
+	public void close(TaskAttemptContext arg0) 
 	{
 		store.close();
 	}

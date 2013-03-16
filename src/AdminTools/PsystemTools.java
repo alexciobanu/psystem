@@ -21,14 +21,18 @@ import org.gcn.plinguacore.util.psystem.rule.InnerRuleMembrane;
 import Interfaces.AbstractDatabase;
 import Interfaces.MultiMembraneMultiset;
 import Interfaces.NodeData;
-import Interfaces.OracleNoSQLDatabase;
 
 public class PsystemTools 
 {	
-	@SuppressWarnings("unchecked")
-	public static void printPsystem()
+	/*public static void main(String[] args)
 	{
-		AbstractDatabase db = new OracleNoSQLDatabase("kvstore","localhost:5000");
+		OracleNoSQLDatabase db = new OracleNoSQLDatabase("PsystemStore","hadoop1:5000");
+		printLevel(1, db);
+	}*/
+	
+	@SuppressWarnings("unchecked")
+	public static void printPsystem(AbstractDatabase db)
+	{
 		String[] alphabet = db.retriveAlphbaet();
 		System.out.print("Alphabet = ");
 		for(int i=0;i<alphabet.length;i++)
@@ -69,16 +73,15 @@ public class PsystemTools
 		}
 
 		//print the multisets of a level
-		printLevel(0);
+		printLevel(0,db);
 	}
 	
-	public static void printLevel(int level)
+	public static void printLevel(int level, AbstractDatabase db)
 	{
-		AbstractDatabase db = new OracleNoSQLDatabase("kvstore","localhost:5000");
 		String[] membranes = db.retriveMembraneList();
 		for (int i=0;i<membranes.length;i++)
 		{
-			List<String> ids = db.retriveLevelIDs(0,membranes[i]);
+			List<String> ids = db.retriveLevelIDs(level,membranes[i]);
 			System.out.println("Membrane " + membranes[i] + " :" );
 			for (String anID : ids)
 			{
@@ -131,9 +134,8 @@ public class PsystemTools
 		db.storeMembraneList(membranes);
 	}
 	
-	public static void grabPsystem(String fileName)
+	public static void grabPsystem(String fileName, AbstractDatabase db)
 	{
-		AbstractDatabase db = new OracleNoSQLDatabase("kvstore","localhost:5000");
 		try
 		{
 			FileInputStream stream = new FileInputStream(fileName);
@@ -176,7 +178,6 @@ public class PsystemTools
 			}
 			// Rules 
 			List<String> ids = grabRawRules(db, ps, alphabet);
-			db.printAllElements();
 			storeSortedRules(ids, db);
 			db.deleteAllTemp();
 		}

@@ -22,6 +22,7 @@ public class BrutForce implements ChildrenCalculator
 		rules = (ArrayList<MultiMembraneMultiset>)  db.retriveMembraneElement(membrane, "left");
 		currentMultiset = multiset;
 		alphabetSize = currentMultiset.length;
+		this.membrane= membrane;
 		int numberofRules = rules.size();
 		ArrayList<int []> allPossibilities = new ArrayList<int []>();
 		

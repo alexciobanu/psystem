@@ -1,8 +1,8 @@
 #!/bin/bash
 #NO SPACES ALLOWED THIS THESE VARIABLES PLEASE SO targetDir can NOT be '/home/mke a dude/bla' THANK YOU
-declare -a manchines=('machine1' 'machine2' 'machine3')
-user='a'
-targetDir='/home/a'
+declare -a manchines=('hadoop1' 'hadoop2')
+user='oracle'
+targetDir='/home/oracle/'
 fails=0
 
 function checkMachines 
@@ -48,13 +48,13 @@ function checkMachines
 function checkForFile
 {
 	echo "Checking if I have the tar for the NoSQL database"
-	if [ -f kv-ce-2.0.23.tar.gz ]; 
+	if [ -f kv-ce-2.0.26.tar.gz ]; 
 	then
 		echo "Found File"
 	else
 		echo "File not found downloading it"
-		wget http://download.oracle.com/otn-pub/otn_software/nosql-database/kv-ce-2.0.23.tar.gz
-		if [ -f kv-ce-2.0.23.tar.gz ];
+		wget http://download.oracle.com/otn-pub/otn_software/nosql-database/kv-ce-2.0.26.tar.gz
+		if [ -f kv-ce-2.0.26.tar.gz ];
 		then
 			echo "File successfully downloaded"
 		else
@@ -92,20 +92,20 @@ function copyAndUntar
 	for aMachine in ${manchines[*]}
 	do
 		echo "Copying file to machine"
-		declare -a args=("kv-ce-2.0.23.tar.gz" $user@$aMachine":"$targetDir)
+		declare -a args=("kv-ce-2.0.26.tar.gz" $user@$aMachine":"$targetDir)
 		scp "${args[@]}"
 		if [ $? -ne 0 ]; 
 		then 	
-			echo -e "\e[1;31m" "kv-ce-2.0.23.tar.gz could not be copied to" $aMachine " " "\e[0m"
+			echo -e "\e[1;31m" "kv-ce-2.0.26.tar.gz could not be copied to" $aMachine " " "\e[0m"
 			fails=$((fails+1))
 		fi
 		echo "Files successfully copied"
 		echo "Untaring files on the machines"
-		declare -a args=($user@$aMachine "tar -zxvf $targetDir/kv-ce-2.0.23.tar.gz >/dev/null" )
+		declare -a args=($user@$aMachine "tar -zxvf $targetDir/kv-ce-2.0.26.tar.gz >/dev/null" )
 		ssh "${args[@]}"
 		if [ $? -ne 0 ]; 
 		then 	
-			echo -e "\e[1;31m" "kv-ce-2.0.23.tar.gz could not be copied UnTarged on machine" $aMachine " " "\e[0m"
+			echo -e "\e[1;31m" "kv-ce-2.0.26.tar.gz could not be copied UnTarged on machine" $aMachine " " "\e[0m"
 			fails=$((fails+1))
 		fi
 		echo "Done untaring files on the machines"
@@ -130,7 +130,7 @@ function createRootDirAndConfig
 	echo "Creating initial configuration"
 
 	#this will be the for the admin node which is the fisrt machine in the list
-	declare -a args=($user@${manchines[0]} "java -jar kv-2.0.23/lib/kvstore-2.0.23.jar makebootconfig -root KVROOT -port 5000 -admin 5001 -host ${manchines[0]} -harange 5010,5020 -capacity 1 -num_cpus 0 -memory_mb 0")
+	declare -a args=($user@${manchines[0]} "java -jar kv-2.0.26/lib/kvstore.jar makebootconfig -root KVROOT -port 5000 -admin 5001 -host ${manchines[0]} -harange 5010,5020 -capacity 1 -num_cpus 0 -memory_mb 0")
 	ssh "${args[@]}"
 	if [ $? -ne 0 ]; 
 		then 	
@@ -141,7 +141,7 @@ function createRootDirAndConfig
 	#for the rest of the machines
 	for aMachine in ${manchines[*]:1}
 	do
-		declare -a args=($user@$aMachine "java -jar kv-2.0.23/lib/kvstore-2.0.23.jar makebootconfig -root KVROOT -port 5000 -host $aMachine -harange 5010,5020 -capacity 1 -num_cpus 0 -memory_mb 0")
+		declare -a args=($user@$aMachine "java -jar kv-2.0.26/lib/kvstore.jar makebootconfig -root KVROOT -port 5000 -host $aMachine -harange 5010,5020 -capacity 1 -num_cpus 0 -memory_mb 0")
 		ssh "${args[@]}"
 		if [ $? -ne 0 ]; 
 		then 	
@@ -157,7 +157,7 @@ function startNoSQLInstances
 	echo "Stating NoSQL instance on each machine"
 	for aMachine in ${manchines[*]}	
 	do
-		declare -a args=($user@$aMachine 'nohup java -jar kv-2.0.23/lib/kvstore-2.0.23.jar start -root KVROOT > foo.out 2> foo.err < /dev/null &')
+		declare -a args=($user@$aMachine 'nohup java -jar kv-2.0.26/lib/kvstore.jar start -root KVROOT > foo.out 2> foo.err < /dev/null &')
 		ssh "${args[@]}"
 		if [ $? -ne 0 ]; 
 		then 	
@@ -175,7 +175,7 @@ function createAndRunConfigurationFile
 
 	echo "" > $filename
 	echo "configure -name PsystemStore" >> $filename
-	echo "plan deploy-datacenter -name \"VirtualDatacentre\" -rf 3 -wait" >> $filename
+	echo "plan deploy-datacenter -name \"VirtualDatacentre\" -rf 2 -wait" >> $filename
 	echo "plan deploy-sn -dc dc1 -host ${manchines[0]} -port 5000 -wait" >> $filename
 	echo "plan deploy-admin -sn sn1 -port 5001 -wait" >> $filename
 	echo "pool create -name PsystemPool" >> $filename
@@ -195,7 +195,7 @@ function createAndRunConfigurationFile
 	scp "${args[@]}"
 
 	echo "Executing Config File in admin console"
-	declare -a args=($user@$aMachine "java -jar kv-2.0.23/lib/kvstore-2.0.23.jar runadmin -port 5000 -host ${manchines[0]} load -file "$targetDir/$filename)
+	declare -a args=($user@$aMachine "java -jar kv-2.0.26/lib/kvstore.jar runadmin -port 5000 -host ${manchines[0]} load -file "$targetDir/$filename)
 	ssh "${args[@]}"
 	if [ $? -ne 0 ]; 
 	then 	
@@ -226,7 +226,7 @@ function stoptNoSQLInstances
 	echo "Stopping NoSQL instance on each machine"
 	for aMachine in ${manchines[*]}	
 	do
-		declare -a args=($user@$aMachine 'java -jar kv-2.0.23/lib/kvstore-2.0.23.jar stop -root KVROOT')
+		declare -a args=($user@$aMachine 'java -jar kv-2.0.26/lib/kvstore.jar stop -root KVROOT')
 		ssh "${args[@]}"
 		if [ $? -ne 0 ]; 
 		then 	
@@ -242,7 +242,7 @@ function powerCycleHosts
 	echo "Rebooting all of the hosts"
 	for aMachine in ${manchines[*]}	
 	do
-		declare -a args=($user@$aMachine 'sudo shutdown -r now')
+		declare -a args=($user@$aMachine 'sudo /sbin/shutdown -r now')
 		ssh "${args[@]}"
 		if [ $? -ne 0 ]; 
 		then 	
@@ -258,7 +258,7 @@ function shutdownHosts
 	echo "Shutting down all of the hosts"
 	for aMachine in ${manchines[*]}	
 	do
-		declare -a args=($user@$aMachine 'sudo shutdown -h now')
+		declare -a args=($user@$aMachine 'sudo /sbin/shutdown -h now')
 		ssh "${args[@]}"
 		if [ $? -ne 0 ]; 
 		then 	
@@ -283,10 +283,11 @@ function doDeployment
 	checkForFail "Starting the NoSQL database on each node"
 	createAndRunConfigurationFile 
 	checkForFail "Confuguring the NoSQL cluser using config file $filename"
-	doSmokeTest
-	checkForFail "Smoke test"
 	addSchemas
 	checkForFail "Adding schemas to the database"
+	doSmokeTest
+	checkForFail "Smoke test"
+
 }
 
 function doSmokeTest
@@ -294,8 +295,8 @@ function doSmokeTest
 	checkForFail "Doing snmoke test"
 	testScript="test.sh"
 	echo "#!/bin/sh" >$testScript
-	echo "javac -cp kv-2.0.23/lib/kvclient-2.0.23.jar:examples kv-2.0.23/examples/hello/*.java" >$testScript
-	echo "java -cp kv-2.0.23/lib/kvclient-2.0.23.jar:kv-2.0.23/examples hello.HelloBigDataWorld -host ${manchines[0]} -port 5000 -store PsystemStore" >$testScript
+	echo "javac -cp kv-2.0.26/lib/kvclient.jar:examples kv-2.0.26/examples/hello/*.java" >>$testScript
+	echo "java -cp kv-2.0.26/lib/kvclient.jar:kv-2.0.26/examples hello.HelloBigDataWorld -host ${manchines[0]} -port 5000 -store PsystemStore" >>$testScript
 	declare -a args=($testScript $user@${manchines[0]}":"$targetDir)
 	scp "${args[@]}"
 	declare -a args=($user@${manchines[0]} "chmod +x "$targetDir/$testScript)

@@ -1,6 +1,5 @@
 package OutputFormat;
 
-import java.io.IOException;
 import java.util.ArrayList;
 
 import oracle.kv.KVStore;
@@ -24,7 +23,7 @@ public class NoSQLOutputCommitter extends OutputCommitter
 	}
 	
 	@Override
-	public void abortTask(TaskAttemptContext arg0) throws IOException 
+	public void abortTask(TaskAttemptContext arg0) 
 	{
 		ArrayList<Key> keysToRemove = NoSQLOutputFormat.addedKeys.get(addedKeysID);
 		String storeName = arg0.getConfiguration().get("NoSQLDB.output.Store");
@@ -39,25 +38,25 @@ public class NoSQLOutputCommitter extends OutputCommitter
 	}
 
 	@Override
-	public void commitTask(TaskAttemptContext arg0) throws IOException 
+	public void commitTask(TaskAttemptContext arg0) 
 	{
 		NoSQLOutputFormat.addedKeys.remove(addedKeysID);
 	}
 
 	@Override
-	public boolean needsTaskCommit(TaskAttemptContext arg0) throws IOException 
+	public boolean needsTaskCommit(TaskAttemptContext arg0)  
 	{
 		return false;
 	}
 
 	@Override
-	public void setupJob(JobContext arg0) throws IOException 
+	public void setupJob(JobContext arg0)  
 	{
 		// nothing to do 
 	}
 
 	@Override
-	public void setupTask(TaskAttemptContext arg0) throws IOException 
+	public void setupTask(TaskAttemptContext arg0) 
 	{
 		// nothing to do
 	}

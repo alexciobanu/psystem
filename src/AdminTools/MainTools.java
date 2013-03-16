@@ -31,10 +31,10 @@ public class MainTools
 			db = new OracleNoSQLDatabase(args[0],args[1]);
 			if ("load".equalsIgnoreCase(args[2]))
 			{
-				if (args[3]!=null)
+				if (args.length==4)
 				{
 					System.out.println("loading psystem");
-					PsystemTools.grabPsystem(args[3]);
+					PsystemTools.grabPsystem(args[3],db);
 					System.out.println("Done loading psystem");
 				}
 				else
@@ -56,7 +56,7 @@ public class MainTools
 			}
 			else if ("deleteLevel".equalsIgnoreCase(args[2]))
 			{
-				if (args[3]!=null)
+				if (args.length==4)
 				{
 					System.out.println("deleting the derivation tree level from the database");
 					db.deleteLevel( Integer.parseInt(args[3]));
@@ -77,9 +77,9 @@ public class MainTools
 			}
 			else if ("showLevel".equalsIgnoreCase(args[2]))
 			{
-				if (args[3]!=null)
+				if (args.length==4)
 				{
-					PsystemTools.printLevel( Integer.parseInt( args[3] ));
+					PsystemTools.printLevel( Integer.parseInt( args[3] ),db);
 				}
 				else
 				{
@@ -88,7 +88,7 @@ public class MainTools
 			}
 			else if ("showLevelSize".equalsIgnoreCase(args[2]))
 			{
-				if (args[3]!=null)
+				if (args.length==4)
 				{
 					System.out.println("showing the derivation tree level size from the database");
 					db.printLevelSize( Integer.parseInt( args[3] ) );
@@ -126,13 +126,13 @@ public class MainTools
 	public static void viewLevel(String level) throws IOException, ClassNotFoundException
 	{
 		
-		PsystemTools.printLevel(Integer.parseInt(level));
+		PsystemTools.printLevel(Integer.parseInt(level),db);
 		db.printLevelSize(Integer.parseInt(level));
 	}
 	
 	public static void viewPsystem() throws IOException, ClassNotFoundException
 	{
-		PsystemTools.printPsystem();
+		PsystemTools.printPsystem(db);
 	}
 	
 	public static void deletePsystem() throws IOException, ClassNotFoundException

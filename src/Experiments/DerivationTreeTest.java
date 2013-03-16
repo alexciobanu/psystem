@@ -20,14 +20,14 @@ public class DerivationTreeTest
 	{
 		int level = 0;
 		String membranes = "1"; 
-		AbstractDatabase db = new OracleNoSQLDatabase("kvstore","localhost:5000");
+		AbstractDatabase db = new OracleNoSQLDatabase("PsystemStore","hadoop1:5000");
 
-		PsystemTools.grabPsystem("/home/a/Workspace/p2.pli");	
+		//PsystemTools.grabPsystem("/home/oracle/workspace/p2.pli",db);	
 		List<String> IDS = db.retriveLevelIDs(level,membranes);
 		NodeData aNode = db.RetrieveNode(IDS.get(0),level,membranes);
 		int[] aMultiset = aNode.multiset;
 		
-		PsystemTools.printPsystem();
+		PsystemTools.printPsystem(db);
 		
 		ChildrenCalculator calc = new BrutForce();
 		List<int[]> possiblilities = calc.findAllChildren(aMultiset, membranes, db);

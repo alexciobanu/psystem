@@ -56,6 +56,7 @@ public class MultiMembraneMultiset implements Serializable
 	
 	public int [] getMulisetForMembrane(String membrane)
 	{
+		
 		int index = Membranes.indexOf(membrane);
 		return Multisets.get(index);
 	}

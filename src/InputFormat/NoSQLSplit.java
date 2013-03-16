@@ -32,51 +32,72 @@ public class NoSQLSplit extends InputSplit implements Writable
 	}
 	
 	@Override
-	public long getLength() throws IOException, InterruptedException 
+	public long getLength() 
 	{
 		return keyArray.size();
 	}
 
 	@Override
-	public String[] getLocations() throws IOException, InterruptedException 
+	public String[] getLocations()
 	{
-		String [] hosts = {"machine1"};
+		//TODO FIX THIS
+		String [] hosts = {"hadoop1"};
 		return hosts;
 	}
 
 	@Override
-	public void readFields(DataInput in) throws IOException 
+	public void readFields(DataInput in) 
 	{
-		int numKeys = in.readInt();
-
-		for(int i=0;i<numKeys;i++)
+		int numKeys;
+		try 
 		{
-			String  rawString = in.readUTF();
-			String[] components = rawString.split("\t");
-			List<String> majorComponent = Arrays.asList( components[0].split(" ") ); 
-			List<String> minorComponent = Arrays.asList( components[1].split(" ") ); 
-			Key aKey = Key.createKey(majorComponent, minorComponent);
-			keyArray.add(aKey);
+			numKeys = in.readInt();
+
+
+			for(int i=0;i<numKeys;i++)
+			{
+				String  rawString = in.readUTF();
+				String[] components = rawString.split("\t");
+				List<String> majorComponent = Arrays.asList( components[0].split(" ") ); 
+				List<String> minorComponent = Arrays.asList( components[1].split(" ") ); 
+				Key aKey = Key.createKey(majorComponent, minorComponent);
+				keyArray.add(aKey);
+			}	
+		} 
+		catch (IOException e) 
+		{
+			// TODO Auto-generated catch block
+			e.printStackTrace();
 		}
 	}
 
 	@Override
-	public void write(DataOutput out) throws IOException 
+	public void write(DataOutput out) 
 	{
-		out.writeInt(keyArray.size());
-		for(Key aKey : keyArray)
+		try 
 		{
-			String myKey="";
-			for(String majorPath: aKey.getMajorPath())
+			out.writeInt(keyArray.size());
+
+			for(Key aKey : keyArray)
 			{
-				myKey+=majorPath+" ";
+				String myKey="";
+				for(String majorPath: aKey.getMajorPath())
+				{
+					myKey+=majorPath+" ";
+				}
+				myKey+="\t";
+				for(String minorPath: aKey.getMinorPath())
+				{
+					myKey+=minorPath+" ";
+				}
+				out.writeUTF(myKey);
 			}
-			myKey+="\t";
-			for(String minorPath: aKey.getMinorPath())
-			{
-				myKey+=minorPath+" ";
-			}
-			out.writeUTF(myKey);
+		
+		} 
+		catch (IOException e) 
+		{
+			// TODO Auto-generated catch block
+			e.printStackTrace();
 		}
 	}
 }

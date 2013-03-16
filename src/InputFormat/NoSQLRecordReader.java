@@ -25,8 +25,9 @@ public class NoSQLRecordReader<K, V> extends RecordReader<K, V>
 	GenericAvroBinding binding;
 	
 	@Override
-	public void initialize(InputSplit arg0, TaskAttemptContext arg1) throws IOException, InterruptedException 
+	public void initialize(InputSplit arg0, TaskAttemptContext arg1)
 	{
+		System.out.println("");
 		String storeName = arg1.getConfiguration().get("NoSQLDB.input.Store");
 		String hosts = arg1.getConfiguration().get("NoSQLDB.input.Hosts");
 		
@@ -40,7 +41,7 @@ public class NoSQLRecordReader<K, V> extends RecordReader<K, V>
                 
         AvroCatalog catalog = store.getAvroCatalog(); 
         String s = " { \"type\" : \"record\",\"name\" : \"nodeRecord\", \"fields\" : ["
-         	     + "{ \"name\" :\"data\", \"type\" :\"bytes\", \"default\" :\"null\" },"
+         	     + "{ \"name\" :\"multiset\", \"type\" :\"bytes\", \"default\" :\"null\" },"
                   + "{ \"name\" :\"rules\", \"type\" :\"bytes\", \"default\" :\"null\" },"
                   + "{ \"name\" :\"parent\", \"type\" :\"string\", \"default\" :\"null\" },"
   	               + "{ \"name\" :\"duplicate\", \"type\" :\"string\", \"default\" :\"\" }"
@@ -59,7 +60,7 @@ public class NoSQLRecordReader<K, V> extends RecordReader<K, V>
 
 	@SuppressWarnings("unchecked")
 	@Override
-	public K getCurrentKey() throws IOException, InterruptedException 
+	public K getCurrentKey() 
 	{
 		//System.out.println("GETTIG KEY:" + keys.get(currentIndex));
 		return (K) keys.get(currentIndex);
@@ -67,20 +68,20 @@ public class NoSQLRecordReader<K, V> extends RecordReader<K, V>
 
 	@SuppressWarnings("unchecked")
 	@Override
-	public V getCurrentValue() throws IOException, InterruptedException 
+	public V getCurrentValue() 
 	{
 		ValueVersion inputData = store.get( keys.get(currentIndex) );
 		return (V) binding.toObject( inputData.getValue() );
 	}
 
 	@Override
-	public float getProgress() throws IOException, InterruptedException 
+	public float getProgress() 
 	{
 		return currentIndex/NumberOfKeys;
 	}
 
 	@Override
-	public boolean nextKeyValue() throws IOException, InterruptedException 
+	public boolean nextKeyValue() 
 	{
 		currentIndex++;
 		if (currentIndex<NumberOfKeys)
@@ -88,6 +89,4 @@ public class NoSQLRecordReader<K, V> extends RecordReader<K, V>
 		else
 			return false;
 	}
-
-
 }

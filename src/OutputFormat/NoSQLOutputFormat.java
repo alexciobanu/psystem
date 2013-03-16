@@ -28,13 +28,13 @@ public class NoSQLOutputFormat<K,V> extends OutputFormat<K,V>
 	}
 	
 	@Override
-	public void checkOutputSpecs(JobContext arg0) throws IOException, InterruptedException 
+	public void checkOutputSpecs(JobContext arg0) throws IOException 
 	{
 		String storeName = arg0.getConfiguration().get("NoSQLDB.output.Store");
 		String hosts = arg0.getConfiguration().get("NoSQLDB.output.Hosts");
 		if ((storeName == null) || (hosts == null))
 		{
-			System.out.println("NoSQLDB.input.Store or NoSQLDB.input.Hosts not set");
+			System.out.println("NoSQLDB.output.Store or NoSQLDB.input.Hosts not set");
 			throw new IOException();
 		}
 		KVStoreConfig config = new KVStoreConfig(storeName, hosts);
@@ -45,20 +45,20 @@ public class NoSQLOutputFormat<K,V> extends OutputFormat<K,V>
 		}
 		catch (Exception e) 
 		{
-			System.out.println("NoSQLDB.input.Store or NoSQLDB.input.Hosts not set correctly or the databse is not create");
+			System.out.println("NoSQLDB.output.Store or NoSQLDB.input.Hosts not set correctly or the databse is not create");
 			throw new IOException();
 		}
 	}
 
 	@Override
-	public OutputCommitter getOutputCommitter(TaskAttemptContext arg0) throws IOException, InterruptedException 
+	public OutputCommitter getOutputCommitter(TaskAttemptContext arg0)
 	{
 		OutputCommitter committer = new NoSQLOutputCommitter(getuniqueId(arg0));
 		return committer;
 	}
 
 	@Override
-	public org.apache.hadoop.mapreduce.RecordWriter<K, V> getRecordWriter(TaskAttemptContext arg0) throws IOException, InterruptedException 
+	public org.apache.hadoop.mapreduce.RecordWriter<K, V> getRecordWriter(TaskAttemptContext arg0) 
 	{
 		String storeName = arg0.getConfiguration().get("NoSQLDB.output.Store");
 		String hosts = arg0.getConfiguration().get("NoSQLDB.output.Hosts");

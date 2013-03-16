@@ -1,6 +1,5 @@
 package InputFormat;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -22,17 +21,16 @@ import org.apache.hadoop.mapreduce.TaskAttemptContext;
 public class NoSQLInputFormat<K,V> extends InputFormat<K, V> 
 {
 	@Override
-	public RecordReader<K, V> createRecordReader(InputSplit arg0, TaskAttemptContext arg1) throws IOException, InterruptedException 
+	public RecordReader<K, V> createRecordReader(InputSplit arg0, TaskAttemptContext arg1) 
 	{
 		return new NoSQLRecordReader<K,V>();
 	}
 
 	@Override
-	public List<InputSplit> getSplits(JobContext arg0) throws IOException,InterruptedException 
+	public List<InputSplit> getSplits(JobContext arg0) 
 	{
 		String MajorKey = arg0.getConfiguration().get("NoSQLDB.input.Key");
 		Key myKey = Key.createKey( MajorKey );
-
 		String storeName = arg0.getConfiguration().get("NoSQLDB.input.Store");
 		String hosts = arg0.getConfiguration().get("NoSQLDB.input.Hosts");
 		int numberOfKeysPerSplit = arg0.getConfiguration().getInt("NoSQLDB.input.KeysPerSplit", 1);
