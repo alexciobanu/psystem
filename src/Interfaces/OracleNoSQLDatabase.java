@@ -498,4 +498,219 @@ public class OracleNoSQLDatabase implements AbstractDatabase {
 		}
 		
 	}
+
+	@Override
+	public void StoreAppliedRules(String NodeId, Object data) 
+	{
+		ByteArrayOutputStream bo = new ByteArrayOutputStream();
+		ObjectOutputStream out;
+		try 
+		{
+			out = new ObjectOutputStream(bo);
+			out.writeObject(data);
+		} 
+		catch (IOException e) 
+		{
+			e.printStackTrace();
+		}
+        Key myKey = Key.createKey(NodeId,"appliedRules");    
+        GenericData.Record record = new GenericData.Record(schema);
+        ByteBuffer buffer = ByteBuffer.wrap((byte []) bo.toByteArray());
+        record.put("data", buffer);
+        Value KVvalue = binding.toValue(record);
+        store.put(myKey, KVvalue);
+	}
+
+	@Override
+	public void StoreChildren(String NodeId, ArrayList<String> data) 
+	{
+		ByteArrayOutputStream bo = new ByteArrayOutputStream();
+		ObjectOutputStream out;
+		try 
+		{
+			out = new ObjectOutputStream(bo);
+			out.writeObject(data);
+		} 
+		catch (IOException e) 
+		{
+			e.printStackTrace();
+		}
+        Key myKey = Key.createKey(NodeId,"children");    
+        GenericData.Record record = new GenericData.Record(schema);
+        ByteBuffer buffer = ByteBuffer.wrap((byte []) bo.toByteArray());
+        record.put("data", buffer);
+        Value KVvalue = binding.toValue(record);
+        store.put(myKey, KVvalue);
+	}
+	
+	@Override
+	public void StoreMembraneSolutionMatrix(String membraneID, int[][] solutionsMatrix, List<String> constants) 
+	{
+		ByteArrayOutputStream solution = new ByteArrayOutputStream();
+		ByteArrayOutputStream consts = new ByteArrayOutputStream();
+		ObjectOutputStream out;
+		ObjectOutputStream out2;
+		try 
+		{
+			out = new ObjectOutputStream(solution);
+			out2 = new ObjectOutputStream(consts);
+			out.writeObject(solutionsMatrix);
+			out2.writeObject(constants);
+			
+		} 
+		catch (IOException e) 
+		{
+			e.printStackTrace();
+		}
+        Key myKey = Key.createKey("solutionSolverMatrix",membraneID);    
+        GenericData.Record record = new GenericData.Record(schema);
+        ByteBuffer buffer = ByteBuffer.wrap((byte []) solution.toByteArray());
+        record.put("data", buffer);
+        Value KVvalue = binding.toValue(record);
+        store.put(myKey, KVvalue);
+        
+        Key myKey2 = Key.createKey("solutionSolverConstants",membraneID);    
+        GenericData.Record record2 = new GenericData.Record(schema);
+        ByteBuffer buffer2 = ByteBuffer.wrap((byte []) consts.toByteArray());
+        record2.put("data", buffer2);
+        Value KVvalue2 = binding.toValue(record2);
+        store.put(myKey2, KVvalue2);
+	}
+	
+	@Override
+	public int[][] RetriveMembraneSolutionMatrix(String membraneID) 
+	{
+		
+		int[][] data;
+		try 
+		{
+			Key myKey = Key.createKey("solutionSolverMatrix",membraneID); 
+	        ValueVersion myInput = store.get(myKey);
+	        if (myInput ==null)
+	        	return null;
+	        
+	        GenericRecord inputRecord = new GenericData.Record(schema);
+	        inputRecord  = binding.toObject(myInput.getValue());
+	        ByteBuffer temp = (ByteBuffer) inputRecord.get(0);
+			byte[] datatRecords = (byte[]) temp.array();
+			ByteArrayInputStream bi = new ByteArrayInputStream( datatRecords );
+	        ObjectInputStream in = new ObjectInputStream(bi);
+	        data = (int[][]) in.readObject();
+		} catch (IOException e) 
+		{
+			e.printStackTrace();
+			return null;
+		} catch (ClassNotFoundException e) 
+		{
+			e.printStackTrace();
+			return null;
+		}
+		return data;
+	}
+	
+	@SuppressWarnings("unchecked")
+	@Override
+	public List<String> RetriveMembraneSolutionConstants(String membraneID) 
+	{
+		
+		List<String> data = new ArrayList<String>();
+		try 
+		{
+			Key myKey = Key.createKey("solutionSolverConstants",membraneID); 
+	        ValueVersion myInput = store.get(myKey);
+	        if (myInput ==null)
+	        	return null;
+	        
+	        GenericRecord inputRecord = new GenericData.Record(schema);
+	        inputRecord  = binding.toObject(myInput.getValue());
+	        ByteBuffer temp = (ByteBuffer) inputRecord.get(0);
+			byte[] datatRecords = (byte[]) temp.array();
+			ByteArrayInputStream bi = new ByteArrayInputStream( datatRecords );
+	        ObjectInputStream in = new ObjectInputStream(bi);
+	        data = (List<String>) in.readObject();
+		} catch (IOException e) 
+		{
+			e.printStackTrace();
+			return null;
+		} catch (ClassNotFoundException e) 
+		{
+			e.printStackTrace();
+			return null;
+		}
+		return data;
+	}
+	
+	@Override
+	public boolean CheckForSolutionMatrix(String membraneID)
+	{
+		Key myKey = Key.createKey("solutionSolverMatrix",membraneID);
+		ValueVersion myInput = store.get(myKey);
+        if (myInput ==null)
+        	return false;
+        else
+        	return true;
+	}
+
+	@Override
+	public Object RetriveAppliedRules(String NodeId) 
+	{
+		
+		Object data;
+		try 
+		{
+			Key myKey = Key.createKey(NodeId,"appliedRules"); 
+	        ValueVersion myInput = store.get(myKey);
+	        if (myInput ==null)
+	        	return null;
+	        
+	        GenericRecord inputRecord = new GenericData.Record(schema);
+	        inputRecord  = binding.toObject(myInput.getValue());
+	        ByteBuffer temp = (ByteBuffer) inputRecord.get(0);
+			byte[] datatRecords = (byte[]) temp.array();
+			ByteArrayInputStream bi = new ByteArrayInputStream( datatRecords );
+	        ObjectInputStream in = new ObjectInputStream(bi);
+	        data = (Object) in.readObject();
+		} catch (IOException e) 
+		{
+			e.printStackTrace();
+			return null;
+		} catch (ClassNotFoundException e) 
+		{
+			e.printStackTrace();
+			return null;
+		}
+		return data;
+	}
+
+	@SuppressWarnings("unchecked")
+	@Override
+	public ArrayList<String> RetrieveChildren(String NodeId) 
+	{
+		ArrayList<String> nodesList = new ArrayList<String>();
+		try 
+		{
+			Key myKey = Key.createKey(NodeId,"children");
+	        ValueVersion myInput = store.get(myKey);
+	        if (myInput ==null)
+	        	return null;
+	        
+	        GenericRecord inputRecord = new GenericData.Record(schema);
+	        inputRecord  = binding.toObject(myInput.getValue());
+	        ByteBuffer temp = (ByteBuffer) inputRecord.get(0);
+			byte[] datatRecords = (byte[]) temp.array();
+			ByteArrayInputStream bi = new ByteArrayInputStream( datatRecords );
+	        ObjectInputStream in = new ObjectInputStream(bi);
+	        nodesList = (ArrayList<String>) in.readObject();
+		} catch (IOException e) 
+		{
+			e.printStackTrace();
+			return null;
+		} catch (ClassNotFoundException e) 
+		{
+			e.printStackTrace();
+			return null;
+		}      
+       
+		return nodesList;
+	}
 }

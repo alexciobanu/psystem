@@ -1,5 +1,6 @@
 package Interfaces;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import oracle.kv.Value;
@@ -25,7 +26,15 @@ public interface AbstractDatabase
 	
 	String[] retriveMembraneList();
 	
-	void StoreNode(String NodeId, int level, String membrane, NodeData theNode);
+	public void StoreNode(String NodeId, int level, String membrane, NodeData theNode);
+	
+	void StoreAppliedRules(String NodeId, Object data);
+	
+	void StoreChildren(String NodeId,  ArrayList<String> data);
+	
+    Object RetriveAppliedRules(String NodeId);
+	
+	Object RetrieveChildren(String NodeId);
 	
 	public Value createNodeValue(NodeData theNode);
 	
@@ -42,5 +51,15 @@ public interface AbstractDatabase
 	void deleteAllTemp();
 	
 	void printAllElements();
+	
+	public List<String> RetriveMembraneSolutionConstants(String membraneID);
+	
+	public int[][] RetriveMembraneSolutionMatrix(String membraneID);
+	
+	public boolean CheckForSolutionMatrix(String membraneID);
+	
+	public void StoreMembraneSolutionMatrix(String membraneID, int[][] solutionsMatrix, List<String> objects);
+	
+	
 	
 }

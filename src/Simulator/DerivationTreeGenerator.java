@@ -5,6 +5,7 @@ import java.io.ObjectInputStream;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.UUID;
 
@@ -19,6 +20,7 @@ import org.apache.hadoop.mapreduce.Reducer;
 import DerivationTreeGenerator.ApplyAllRules;
 import DerivationTreeGenerator.BrutForce;
 import DerivationTreeGenerator.ChildrenCalculator;
+import DerivationTreeGenerator.EquationSolver;
 import InputFormat.NoSQLInputFormat;
 import Interfaces.AbstractDatabase;
 import Interfaces.MembranePosibitities;
@@ -56,7 +58,15 @@ public class DerivationTreeGenerator
 			String storeName = context.getConfiguration().get("NoSQLDB.input.Store");
 			String hosts = context.getConfiguration().get("NoSQLDB.input.Hosts");
 			AbstractDatabase db = new OracleNoSQLDatabase(storeName,hosts);
-			ChildrenCalculator calc = new BrutForce();
+			ChildrenCalculator calc;
+			if(db.CheckForSolutionMatrix(membrane))
+			{
+				calc = new BrutForce();
+			}
+			else
+			{
+				calc = new EquationSolver();
+			}
 			List<int[]> possiblilities = calc.findAllChildren(currentMultiset, membrane, db);
 			IntWritable[][]  data = new IntWritable[possiblilities.size()][possiblilities.get(0).length];
 			for(int i=0;i<possiblilities.size();i++)
@@ -104,6 +114,7 @@ public class DerivationTreeGenerator
 			
 			int counter[]= new int[numberOfMembranes]; //this is will a counter of the current combination being tried
 			boolean breakCondition=false;
+			ArrayList<String> children = new ArrayList<String>();
 			while(!breakCondition)
 			{	
 				int[] aCombination = new int[numberOfMembranes];
@@ -129,12 +140,16 @@ public class DerivationTreeGenerator
 					}
 				}
 				MultiMembraneMultiset configuration = new MultiMembraneMultiset();
-				//TODO ADD RULES APPLIED
+				HashMap<String,IntWritable []> rulesApplied = new HashMap<String,IntWritable []>(); 
 				for(i=0;i<aCombination.length;i++)
 				{
 					ApplyAllRules.addMulisetsToConfiguration(configuration, (valuesArray.get(i))[aCombination[i]] ,membranes.get(i) , db);
+					rulesApplied.put(membranes.get(i), (valuesArray.get(i))[aCombination[i]]);
 				}
 				String uuid = UUID.randomUUID().toString();
+				children.add(uuid);
+				//Save rules applied
+				db.StoreAppliedRules(uuid, rulesApplied);
 				for(String aMembrane: configuration.getMembranes())
 				{
 					int[] aconfig = configuration.getMulisetForMembrane(aMembrane);
@@ -146,6 +161,7 @@ public class DerivationTreeGenerator
 					context.write( new KeyWritable(myKey), db.createNodeValue(aNode) );	
 				}
 			}
+			db.StoreChildren(key.toString(), children);
     	}
    	
     }

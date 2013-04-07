@@ -113,18 +113,28 @@ public class BrutForce implements ChildrenCalculator
 				return false;
 			} 
 		}
-		//check if one of the object is rightly underused
-		for(i=0;i<alphabetSize;i++)
+		//check if one of the object is rightly under used
+		boolean canApplyRule = false;
+		for(MultiMembraneMultiset aRule : rules)
 		{
-			if(objectsUsed[i]<currentMultiset[i])
+			int[] ruleConsumption = aRule.getMulisetForMembrane(membrane);
+			for (int k=0;k<ruleConsumption.length;k++)
 			{
-				/*TODO 
-				check if there is a rules that can use that object
-				*/
+				if ( (currentMultiset[k]-objectsUsed[k]) >= ruleConsumption[k])
+				{
+					canApplyRule=true;
+				}
+				else
+				{
+					canApplyRule=false;
+					break;
+				}
+			}
+			if (canApplyRule==true)
+			{
 				return false;
-			} 
+			}
 		}
-		
 		return true;
 	}
 

@@ -22,12 +22,16 @@ def main()
 
 def PrintMembranes(f):
 	i=0;
-	string="@mu = [" 
+	string="@mu = " 
 	while (i<NumberOfMembranes):
+		string+='['
 		i+=1
-		string+='[]\''
+	i=NumberOfMembranes;
+	while (i>0):
+		string+=']\''
 		string+=str(i)
-	string+="]'0;\n\n/* Initial Multisets */ \n\n"	
+		i-=1
+	string+=";\n\n/* Initial Multisets */ \n\n"	
 	f.write(string)
 
 def GenerateObjects(obj):
@@ -56,29 +60,45 @@ def PrintInitialMultiset(f,obj):
 	f.write("\n/* Rules */ \n\n")
 
 def PrintRules(f,obj):
-	membrane=0
-	
-	while membrane<NumberOfMembranes:
+	membrane=1
+
+	while membrane<NumberOfMembranes+1:
 		membrane+=1
 		i=0;
 		allRules = set()
 		while i<NumberOfRules:
 			i+=1
-			LeftObj = random.sample(obj,random.randint(1,3))
-			RightObj = random.sample(obj,random.randint(1,5))
+			LeftObj = random.sample(obj,random.randint(2,3))
+			RightObj = random.sample(obj,random.randint(1,4))
 			while set(LeftObj)==set(RightObj):
-				RightObj = random.sample(obj,random.randint(1,5))
-			string = "["
+				RightObj = random.sample(obj,random.randint(1,4))
+			if (membrane!=NumberOfMembranes+1):
+				string=""
+			else:
+				string="["
+			
 			for j in LeftObj:
 				string+=j
 	 			string+=','
 			string=string.strip(',')
-			string += " --> "
-			for j in RightObj:
-				string+=j
-	 			string+=','
-			string=string.strip(',')
-			string += "]'{0};\n".format(membrane)
+			if (membrane!=NumberOfMembranes+1):
+				string += "[]\'{0} --> ".format(membrane)
+			else:
+				string += "]\'{0} --> ".format(membrane-1)
+			if (membrane==2):
+				for j in RightObj:
+					string+=j
+	 				string+=','
+				string=string.strip(',')
+			string += "["
+			if (membrane!=NumberOfMembranes+1):
+				for j in RightObj:
+					string+=j
+		 			string+=','
+				string=string.strip(',')
+				string += "]'{0};\n".format(membrane)
+			else:
+				string += "]'{0};\n".format(membrane-1)
 			if string not in allRules:
 				f.write(string)
 				allRules.add(string)

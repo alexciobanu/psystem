@@ -7,7 +7,6 @@ import Interfaces.OracleNoSQLDatabase;
 
 public class MainTools 
 {	
-	//static PsystemInterface ps;
 	static AbstractDatabase db;
 	
 	public static void main(String[] args) throws IOException, ClassNotFoundException
@@ -16,6 +15,7 @@ public class MainTools
 		{
 			System.out.println("Usage:");
 			System.out.println("<store> <host> load <PLI File> : Load the PLI file into NOSQL DB");
+			System.out.println("<store> <host> initEqSolver : generates Solution Matrices for solver");
 			System.out.println("<store> <host> initCDRC : Calculates all CDRC cmibinations and load int DB");
 			System.out.println("<store> <host> delete : Deletes the Psystem from the database DB");
 			System.out.println("<store> <host> deleteLevel <level>: Deletes a level of the derivation tree");
@@ -42,6 +42,13 @@ public class MainTools
 					System.out.println("please specify the PLI file to import");
 				}
 			}	
+			else if ("initEqSolver".equalsIgnoreCase(args[2]))
+			{
+				System.out.println("initializing equation solver");
+				EquationSolverLoader loader = new EquationSolverLoader();
+				loader.findSolutionMatrix(db);
+				System.out.println("Done initializing equation solver");
+			}
 			else if ("initCDRC".equalsIgnoreCase(args[2]))
 			{
 				System.out.println("initializing the CDRC pairs");
@@ -125,7 +132,6 @@ public class MainTools
 	
 	public static void viewLevel(String level) throws IOException, ClassNotFoundException
 	{
-		
 		PsystemTools.printLevel(Integer.parseInt(level),db);
 		db.printLevelSize(Integer.parseInt(level));
 	}
