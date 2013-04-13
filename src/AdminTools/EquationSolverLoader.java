@@ -8,10 +8,20 @@ import org.apache.commons.math.fraction.FractionConversionException;
 
 import Interfaces.AbstractDatabase;
 import Interfaces.MultiMembraneMultiset;
-
+import Interfaces.OracleNoSQLDatabase;
 
 public class EquationSolverLoader 
 {
+	
+
+	public static void main(String[] args) 
+	{
+		OracleNoSQLDatabase db = new OracleNoSQLDatabase("PsystemStore", "hadoop1:5000");
+		EquationSolverLoader loader = new EquationSolverLoader();
+		loader.findSolutionMatrix(db);
+	}
+
+	
 	LinkedList<LinkedList<Fraction>> matrix;
 	ArrayList<String> constant;
 	int numRows;

@@ -27,7 +27,8 @@ public class PsystemTools
 	/*public static void main(String[] args)
 	{
 		OracleNoSQLDatabase db = new OracleNoSQLDatabase("PsystemStore","hadoop1:5000");
-		printLevel(1, db);
+		grabPsystem("/home/oracle/workspace/p2.pli",db);
+		//printLevel(1, db);
 	}*/
 	
 	@SuppressWarnings("unchecked")
@@ -86,7 +87,7 @@ public class PsystemTools
 			for (String anID : ids)
 			{
 				NodeData aNode = db.RetrieveNode(anID, level, membranes[i]);
-				System.out.println("MultiSet:" + Arrays.toString(aNode.multiset) + " Rules " + Arrays.toString( aNode.rules ) );
+				System.out.println("MultiSet:" + Arrays.toString(aNode.multiset) + " ID " +  anID );
 			}
 		}
 	}
@@ -163,7 +164,7 @@ public class PsystemTools
 			{	
 				MultiSet<String> initialMultiset= ps.getInitialMultiSets().get(aMembrane.getLabel());
 				if (initialMultiset==null)
-					break;
+					continue;
 				int objects[] = new int[alphabetSize];
 				for(i=0;i<alphabetSize;i++)
 				{	
@@ -255,8 +256,8 @@ public class PsystemTools
 				db.storeTempElement(membrane,ruleID,parent,true,RulesUsingParent);
 			for (int i=0;i<childMembranes.length; i++)
 			{
-				if (!emptyArray(RulesUsingParent))
-					db.storeTempElement(membrane,ruleID,childMembranes[i],true,RulesUsingChildren);
+				if (!emptyArray(RulesUsingChildren[i]))
+					db.storeTempElement(membrane,ruleID,childMembranes[i],true,RulesUsingChildren[i]);
 			}
 			if (!emptyArray(RulesProducingHere))
 				db.storeTempElement(membrane,ruleID,membrane,false,RulesProducingHere);
@@ -264,8 +265,8 @@ public class PsystemTools
 				db.storeTempElement(membrane,ruleID,parent,false,RulesProducingParent);
 			for (int i=0;i<childMembranes.length; i++)
 			{
-				if (!emptyArray(RulesUsingParent))
-					db.storeTempElement(membrane,ruleID,childMembranes[i],false,RulesProducingChildren);
+				if (!emptyArray(RulesProducingChildren[i]))
+					db.storeTempElement(membrane,ruleID,childMembranes[i],false,RulesProducingChildren[i]);
 			}	
 			ruleIDs.add(ruleID);
 		}
@@ -290,8 +291,8 @@ public class PsystemTools
 			ArrayList<MultiMembraneMultiset> aggregradedRulesLeft = new ArrayList<MultiMembraneMultiset>();
 			for(String aRuleID: ids)
 			{
-				MultiMembraneMultiset aRuleRight = db.retriveTempElement(membranes[i], aRuleID,true);
-				MultiMembraneMultiset aRuleLeft = db.retriveTempElement(membranes[i], aRuleID,false );
+				MultiMembraneMultiset aRuleRight = db.retriveTempElement(membranes[i], aRuleID,false);
+				MultiMembraneMultiset aRuleLeft = db.retriveTempElement(membranes[i], aRuleID,true );
 				if ((aRuleLeft.getNumberOfMembranes()>0)||(aRuleRight.getNumberOfMembranes()>0))
 				{
 					aggregradedRulesLeft.add(aRuleLeft);

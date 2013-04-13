@@ -331,7 +331,7 @@ else
 		checkForFail "Check the machines for conectivity"
 		startNoSQLInstances 
 		checkForFail "Starting the NoSQL database on each node"
-		addSchemas
+		#addSchemas
 		echo "NoSQL started"
 	;;
 	"delete" )

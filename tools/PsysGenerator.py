@@ -11,7 +11,7 @@ NumberOfObjects = 0
 NumberOfObjectInInitialMultiset = 5 #int(NumberOfObjects/2)
 
 def PrintHedder(f): 
-	f.write ('''@model<evolution_communication>
+	f.write ('''@model<transition>
 
 def main()
 {
@@ -49,7 +49,7 @@ def PrintInitialMultiset(f,obj):
 	i=0;
 	while i<NumberOfMembranes:
 		i+=1
-		string= "@ms({0}) =".format(i)
+		string= "@ms(%d) =" %i
 		RandomObjects=random.sample(obj,NumberOfObjectInInitialMultiset)
 		for st in RandomObjects:
 			string+=st 
@@ -62,7 +62,7 @@ def PrintInitialMultiset(f,obj):
 def PrintRules(f,obj):
 	membrane=1
 
-	while membrane<NumberOfMembranes+1:
+	while membrane<=NumberOfMembranes:
 		membrane+=1
 		i=0;
 		allRules = set()
@@ -72,19 +72,20 @@ def PrintRules(f,obj):
 			RightObj = random.sample(obj,random.randint(1,4))
 			while set(LeftObj)==set(RightObj):
 				RightObj = random.sample(obj,random.randint(1,4))
-			if (membrane!=NumberOfMembranes+1):
-				string=""
+
+			string="["			
+			if (i<=NumberOfRules-NumberOfObjects):
+				for j in LeftObj:
+					string+=j
+	 				string+=','
 			else:
-				string="["
-			
-			for j in LeftObj:
-				string+=j
-	 			string+=','
+				string+=obj[NumberOfRules-i]
 			string=string.strip(',')
+			
 			if (membrane!=NumberOfMembranes+1):
-				string += "[]\'{0} --> ".format(membrane)
+				string += "[]\'%d --> " % (membrane)
 			else:
-				string += "]\'{0} --> ".format(membrane-1)
+				string += "]\'%d --> " % (membrane-1)
 			if (membrane==2):
 				for j in RightObj:
 					string+=j
@@ -96,14 +97,14 @@ def PrintRules(f,obj):
 					string+=j
 		 			string+=','
 				string=string.strip(',')
-				string += "]'{0};\n".format(membrane)
+				string += "]'%d]'%d;\n" % (membrane, membrane-1)
 			else:
-				string += "]'{0};\n".format(membrane-1)
+				string += "]'%d;\n" % (membrane-1)
 			if string not in allRules:
 				f.write(string)
 				allRules.add(string)
 			else:
-				i-=1;
+				i-=1;	
 
 def PrintTail(f):
 	f.write ('\n}')
@@ -117,14 +118,14 @@ def main(argv=None):
 		argv = sys.argv
 	if len(argv) != 4:
 		print "usage: " + argv[0] + " <NumMembranes> <NumObjects> <NumRulesPerMembrane> "
-		exit(1)
+		return
 	NumberOfMembranes = int(argv[1])
 	NumberOfObjects = int(argv[2])
 	NumberOfRules = int(argv[3])
 
 	if NumberOfMembranes == 0 or NumberOfObjects == 0 or NumberOfRules == 0:
 		print "Please select numbers greater than 0 for the fields"
-		exit(1)
+		return
 
 	OutputFile = open('Psystem.pli', 'w')
 	obj=[]

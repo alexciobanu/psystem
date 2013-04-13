@@ -61,11 +61,11 @@ public class DerivationTreeGenerator
 			ChildrenCalculator calc;
 			if(db.CheckForSolutionMatrix(membrane))
 			{
-				calc = new BrutForce();
+				calc = new EquationSolver();
 			}
 			else
 			{
-				calc = new EquationSolver();
+				calc = new BrutForce();
 			}
 			List<int[]> possiblilities = calc.findAllChildren(currentMultiset, membrane, db);
 			IntWritable[][]  data = new IntWritable[possiblilities.size()][possiblilities.get(0).length];
@@ -87,6 +87,7 @@ public class DerivationTreeGenerator
     {
     	public void reduce(Text key, Iterable<MembranePosibitities> values, Context context) throws IOException, InterruptedException 
     	{
+    		System.out.println(key.toString());
     		String currentlevel = context.getConfiguration().get("NoSQLDB.input.Key");
 			int nextLevel = Integer.parseInt( currentlevel ) + 1;
 			String storeName = context.getConfiguration().get("NoSQLDB.input.Store");
@@ -149,7 +150,7 @@ public class DerivationTreeGenerator
 				String uuid = UUID.randomUUID().toString();
 				children.add(uuid);
 				//Save rules applied
-				db.StoreAppliedRules(uuid, rulesApplied);
+				//db.StoreAppliedRules(uuid, rulesApplied);
 				for(String aMembrane: configuration.getMembranes())
 				{
 					int[] aconfig = configuration.getMulisetForMembrane(aMembrane);
@@ -161,7 +162,7 @@ public class DerivationTreeGenerator
 					context.write( new KeyWritable(myKey), db.createNodeValue(aNode) );	
 				}
 			}
-			db.StoreChildren(key.toString(), children);
+			//db.StoreChildren(key.toString(), children);
     	}
    	
     }
@@ -195,8 +196,10 @@ public class DerivationTreeGenerator
         //Cluster Configuration
         int milliSeconds = 1000*60*60*3; 
         job.getConfiguration().setLong("mapred.task.timeout", milliSeconds);
-        /*job.getConfiguration().setLong("mapred.skip.map.max.skip.records", Long.MAX_VALUE);
-        job.getConfiguration().setLong("mapred.map.max.attempts", 10);
+        job.getConfiguration().unset("mapred.reudce.tasks");
+        job.getConfiguration().setInt("mapred.reudce.tasks", 2);
+        job.getConfiguration().setBoolean("mapred.reduce.tasks.speculative.execution", true);
+        /*job.getConfiguration().setLong("mapred.map.max.attempts", 10);
         job.getConfiguration().setLong("mapred.skip.attempts.to.start.skipping", 3);
         job.getConfiguration().setLong("mapred.map.failures.maxpercent", 50);*/
         

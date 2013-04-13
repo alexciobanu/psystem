@@ -1,6 +1,8 @@
 #!/bin/sh
 
-hadoop fs -rmr /user/a/output
-hadoop jar Psystem.jar Simulator.Hadoop PsystemStore machine1:5000 /user/a/output level0
-hadoop fs -rmr /user/a/output
-hadoop jar Psystem.jar Simulator.Hadoop PsystemStore machine1:5000 /user/a/output level1
+if [ "$1" = "" ]
+then
+    echo "Please enter the level number"
+else
+    hadoop jar Psystem.jar Simulator.DerivationTreeGenerator PsystemStore hadoop1:5000 $1
+fi
