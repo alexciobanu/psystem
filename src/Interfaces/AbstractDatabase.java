@@ -54,11 +54,11 @@ public interface AbstractDatabase
 	
 	public List<String> RetriveMembraneSolutionConstants(String membraneID);
 	
-	public int[][] RetriveMembraneSolutionMatrix(String membraneID);
+	public float[][] RetriveMembraneSolutionMatrix(String membraneID);
 	
 	public boolean CheckForSolutionMatrix(String membraneID);
 	
-	public void StoreMembraneSolutionMatrix(String membraneID, int[][] solutionsMatrix, List<String> objects);
+	public void StoreMembraneSolutionMatrix(String membraneID, float[][] solutionsMatrix, List<String> objects);
 	
 	
 	

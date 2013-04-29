@@ -11,29 +11,29 @@ import Interfaces.AbstractDatabase;
 public class EquationSolver implements ChildrenCalculator 
 {
 	
-	int[][] solutionsMatrix;
-	int[] max; 
-	int[] min; 
-	ArrayList<int []> retestRules = new ArrayList<int []>(); 
+	float[][] solutionsMatrix;
+	float[] max; 
+	float[] min; 
+	ArrayList<float []> retestRules = new ArrayList<float []>(); 
 	ArrayList<int []> allCombinations = new ArrayList<int []>(); 
 
 	@Override
 	public List<int[]> findAllChildren(int[] multiset, String membrane, AbstractDatabase db) 
 	{
-		int[][] initialSolutionMatrix = db.RetriveMembraneSolutionMatrix(membrane);
+		float[][] initialSolutionMatrix = db.RetriveMembraneSolutionMatrix(membrane);
 		List<String> constants = db.RetriveMembraneSolutionConstants(membrane);
 		GenerateaugmentedMatrix(initialSolutionMatrix, constants, multiset);
 		//printSolutionMatrix();
-		max = new int[solutionsMatrix[0].length-1];
-		min = new int[solutionsMatrix[0].length-1];
+		max = new float[solutionsMatrix[0].length-1];
+		min = new float[solutionsMatrix[0].length-1];
 		findMaxMin();
 		goThroughAllCombinations();
 		return allCombinations;
 	}
 	
-	private void GenerateaugmentedMatrix(int[][] initialSolutionMatrix, List<String> constants, int[] multiset)
+	private void GenerateaugmentedMatrix(float[][] initialSolutionMatrix, List<String> constants, int[] multiset)
 	{
-		solutionsMatrix = new int[initialSolutionMatrix.length][initialSolutionMatrix[0].length+1];
+		solutionsMatrix = new float[initialSolutionMatrix.length][initialSolutionMatrix[0].length+1];
 		
 		for(int i=0;i<initialSolutionMatrix.length;i++)
 		{
@@ -49,6 +49,10 @@ public class EquationSolver implements ChildrenCalculator
 	    int column = initialSolutionMatrix[0].length;
 	    for(String aConstant: constants)
 	    {
+	    	while (partOfIdentity( solutionsMatrix[rowCounter]) )
+	    	{
+	    		rowCounter++;
+	    	}
 		    for (int i=0;i<multiset.length;i++)
 		    {
 		    	aConstant = aConstant.replace( String.valueOf((char)(i+65)) , Integer.toString( multiset[i] ) );
@@ -58,7 +62,7 @@ public class EquationSolver implements ChildrenCalculator
 				String value = engine.eval(aConstant).toString();
 				//System.out.println(rowCounter +  "" + value);
 				Double buff = Double.parseDouble(value);
-				solutionsMatrix[rowCounter][column]= buff.intValue();
+				solutionsMatrix[rowCounter][column]= buff.floatValue();
 			} 
 			catch (ScriptException e) 
 			{
@@ -66,22 +70,50 @@ public class EquationSolver implements ChildrenCalculator
 			}
 			rowCounter++;
 	    }
-			
-		
 	}
 	
-	private void findFullCombination(int [] combination)
+	
+	private boolean partOfIdentity(float [] array)
+	{
+		int numberOfOnes=0;
+		for(int i=0;i<array.length;i++)
+		{
+			if (array[i]==1)
+			{
+				numberOfOnes++;
+			}
+			else if (array[i]!=0)
+			{
+				return false;
+			}
+			if (numberOfOnes>1)
+			{
+				return false;
+			}		
+		}
+		if (numberOfOnes==1)
+			return true;
+		else
+			return false;
+	}
+	
+	private void findFullCombination(float [] combination)
 	{
 		int[] result= new int[solutionsMatrix.length];
 		for(int i=0;i<solutionsMatrix.length;i++)
 		{
+			float buff=0;
 			for(int j=0;j<solutionsMatrix[i].length;j++)
 			{
 				if (j<solutionsMatrix[i].length-1)
-					result[i]+=solutionsMatrix[i][j]*combination[j];
+					buff+=solutionsMatrix[i][j]*combination[j];
 				else
-					result[i]+=solutionsMatrix[i][j];
+					buff+=solutionsMatrix[i][j];
 			}
+			if ((int) buff == buff)
+				result[i]= (int) buff;
+			else
+				return;
 		}
 		allCombinations.add(result);
 		//System.out.println(Arrays.toString(result));
@@ -116,7 +148,7 @@ public class EquationSolver implements ChildrenCalculator
 			}
 			if(numberOfOnes==1)
 			{
-				int value =  solutionsMatrix[i][solutionsMatrix[i].length-1] / solutionsMatrix[i][index];
+				float value =  solutionsMatrix[i][solutionsMatrix[i].length-1] / solutionsMatrix[i][index];
 				if (solutionsMatrix[i][index]>0)
 				{
 					if (min[index]>value)
@@ -138,12 +170,21 @@ public class EquationSolver implements ChildrenCalculator
 				retestRules.add(solutionsMatrix[i]);
 			}
 		}
+		for(int i=0;i<max.length;i++)
+		{
+			if (max[i]==Integer.MIN_VALUE)
+			{
+				max[i]=1;
+			}
+			
+		}
+		
 	}
 	
 	private void goThroughAllCombinations()
 	{
-		//create a counter to go through evey possible combination between max and min for each free variable
-		int counter[]= new int[max.length];
+		//create a counter to go through every possible combination between max and min for each free variable
+		float counter[]= new float[max.length];
 		
 		for(int i=0;i<counter.length;i++)
 		{
@@ -154,15 +195,16 @@ public class EquationSolver implements ChildrenCalculator
 		boolean breakCondition = false;
 		do 
 		{	
-			int[] aCombination = new int[max.length];
+			float[] aCombination = new float[max.length];
 			for(k=0;k<max.length;k++)
 			{
 				aCombination[k] = counter[k];
 			}
 			//check a particular combination
-			for (int [] aRule : retestRules)
+			boolean combinationTest=true;
+			for (float [] aRule : retestRules)
 			{
-				int total=0;
+				float total= 0;
 				for(int i=0;i<aRule.length;i++)
 				{
 					if (i<(aRule.length-1))
@@ -170,9 +212,15 @@ public class EquationSolver implements ChildrenCalculator
 					else
 						total+= aRule[i];
 				}
-				if (total>=0)
-				findFullCombination(counter);
+				if (total<0)
+				{
+					combinationTest=false;
+					break;
+				}
 			}
+			if (combinationTest)
+				findFullCombination(counter);
+			
 			//increment the counter by 1 and make appropriate adjustments to the rest of the digits
 			counter[0]+=1;
 			for(k=0;k<max.length;k++)
@@ -201,11 +249,9 @@ public class EquationSolver implements ChildrenCalculator
 			System.out.print("[");
 			for(int j=0;j<solutionsMatrix[i].length;j++)
 			{
-				System.out.print(String.format("%3d", solutionsMatrix[i][j]));
+				System.out.print(String.format("%3f", solutionsMatrix[i][j]));
 			}
 			System.out.println("]");
 		}	
 	}
-
-
 }

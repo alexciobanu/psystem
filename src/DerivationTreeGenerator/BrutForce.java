@@ -115,10 +115,12 @@ public class BrutForce implements ChildrenCalculator
 		}
 		//check if one of the object is rightly under used
 		boolean canApplyRule = false;
+		int[] ruleConsumption;
+		int k;
 		for(MultiMembraneMultiset aRule : rules)
 		{
-			int[] ruleConsumption = aRule.getMulisetForMembrane(membrane);
-			for (int k=0;k<ruleConsumption.length;k++)
+			ruleConsumption = aRule.getMulisetForMembrane(membrane);
+			for (k=0;k</*ruleConsumption.length*/alphabetSize;k++)
 			{
 				if ( (currentMultiset[k]-objectsUsed[k]) >= ruleConsumption[k])
 				{
@@ -135,7 +137,7 @@ public class BrutForce implements ChildrenCalculator
 				return false;
 			}
 		}
-		return true;
+		return false;
 	}
 
 }

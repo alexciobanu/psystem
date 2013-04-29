@@ -16,9 +16,10 @@ public class EquationSolverLoader
 
 	public static void main(String[] args) 
 	{
-		OracleNoSQLDatabase db = new OracleNoSQLDatabase("PsystemStore", "hadoop1:5000");
+		OracleNoSQLDatabase db = new OracleNoSQLDatabase("kvstore", "localhost:5000");
 		EquationSolverLoader loader = new EquationSolverLoader();
 		loader.findSolutionMatrix(db);
+
 	}
 
 	
@@ -114,8 +115,8 @@ public class EquationSolverLoader
 			row.set(i, row.get(i).add((rowMultiplied.get(i).multiply(scalar))));
 		}
 	}
- 
-	private void RREF() {
+	
+	public void RREF() {
 		Coordinate pivot = new Coordinate(0,0);
  
 		int submatrix = 0;
@@ -135,7 +136,8 @@ public class EquationSolverLoader
 				pivot = findPivot(pivot);
  
 				if (getCoordinate(pivot).doubleValue() == 0.0) {
-					pivot.row++;
+					if (pivot.row+1<numRows)
+						pivot.row++;
 					continue;
 				}
  
@@ -146,12 +148,12 @@ public class EquationSolverLoader
 				}
  
 				//Force pivot to be 1
-				if (getCoordinate(pivot).doubleValue() != 1) 
-				{
-					//System.out.println(getCoordinate(pivot));
-					//System.out.println(pivot);
-					//System.out.println(matrix);
-					
+				if (getCoordinate(pivot).doubleValue() != 1) {
+					/*
+					System.out.println(getCoordinate(pivot));
+					System.out.println(pivot);
+					System.out.println(matrix);
+					*/
 					Fraction scalar = getCoordinate(pivot).reciprocal();
 					Scale(pivot, scalar);
 				}
@@ -196,7 +198,7 @@ public class EquationSolverLoader
 				pivot.row++;
 		}
 	}
- 
+  
 	private boolean isColumnZeroes(Coordinate a) {
 		for (int i = 0; i < numRows; i++) {
 			if (matrix.get(i).get(a.col).doubleValue() != 0.0) {
@@ -221,9 +223,10 @@ public class EquationSolverLoader
 		Coordinate pivot = new Coordinate(a.row, a.col);
 		Coordinate current = new Coordinate(a.row, a.col);	
  
-		for (int i = a.row; i < (numRows - first_row); i++) {
+		for (int i = a.row; i < (numRows ); i++) {
 			current.row = i;
-			if (getCoordinate(current).doubleValue() == 1.0) {
+			if ((getCoordinate(current).doubleValue() == 1.0) || (getCoordinate(pivot).doubleValue() == 0.0))
+			{
 				Interchange(current, a);
 			}
 		}
@@ -247,30 +250,67 @@ public class EquationSolverLoader
 		return matrix.toString().replace("], ", "]\n");
 	}
 	
-	public int[][] calculateSolutionMatrix()
+	public float[][] calculateSolutionMatrix()
 	{	
-		int[][] solutionsMatrix = new int[numCols][numCols-numRows];
-		int i=0;
+		//find the free variables
+		int columnNumber=0;
+		int[] freeVariables= new int[numCols-numRows];
+		int freeVariable=0;
 		for( LinkedList<Fraction> row : matrix)
 		{
-			int j=0;
-			for (int k = numRows; k< numCols; k++) 
+			while (row.get(columnNumber).intValue()!=1.0)
 			{
-				solutionsMatrix[i][j]=row.get(k).intValue()*-1;
-				//System.out.print(row.get(k)+"t"+k+" ");
-				j++;
+				freeVariables[freeVariable]=columnNumber;
+				freeVariable++;
+				columnNumber++;				
 			}
-		i++;
+			columnNumber++;
 		}
-		int j=0;
-		while (i<numCols)
+		for(int i=freeVariable;i<freeVariables.length;i++)
 		{
-			solutionsMatrix[i][j]=1;
-			i++;
+			freeVariables[i]=columnNumber;
+			columnNumber++;
+		}
+		//System.out.println("Free var: " + Arrays.toString(freeVariables));
+		
+		//load solution matrix
+		float[][] solutionsMatrix = new float[numCols][numCols-numRows];
+		int currentColumn=0;
+		for( LinkedList<Fraction> row : matrix)
+		{
+			int index = indexOf(freeVariables,currentColumn);
+			while (index !=-1)
+			{
+				solutionsMatrix[currentColumn][index]=1;
+				currentColumn++;	
+				index = indexOf(freeVariables,currentColumn);
+			}
+			for(int j=0;j<freeVariables.length;j++)
+			{
+				solutionsMatrix[currentColumn][j] = row.get(freeVariables[j]).floatValue()*-1;
+			}
+			currentColumn++;		
+		}
+		int j=currentColumn-numRows;
+		while (currentColumn<numCols)
+		{
+			solutionsMatrix[currentColumn][j]=1;
+			currentColumn++;
 			j++;
 		}
 
 		return solutionsMatrix;
+	}
+	
+	private int indexOf(int [] array, int value)
+	{
+		for(int i=0;i<array.length;i++)
+		{
+			if (array[i]==value)
+				return i;
+					
+		}
+		return -1;
 	}
 
 	public void findSolutionMatrix(AbstractDatabase theDB) 
@@ -295,7 +335,9 @@ public class EquationSolverLoader
 			}
 			initMatrix(equationMatrix);
 			RREF();
-			int[][] sol = calculateSolutionMatrix();
+			//System.out.println("-------------"+ aMembrane +"---------------------");
+			//System.out.println(toString());
+			float[][] sol = calculateSolutionMatrix();
 			db.StoreMembraneSolutionMatrix(aMembrane, sol, constant );
 		}
 	}

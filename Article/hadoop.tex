@@ -1,6 +1,10 @@
 \documentclass[runningheads]{llncs}
+\usepackage{graphicx}
+\usepackage{algorithmic}
+\usepackage{amsmath}
+\usepackage{caption}
+\usepackage{amssymb}
 
-%\usepackage{algorithmic}
 \newtheorem{defn}{\sc{Definition}}[subsection]
 \newtheorem{nota}{\sc{Notation}}[subsection]
 \title{Using Big Data technologies with P systems}
@@ -10,7 +14,7 @@
 
 \institute{Department of Computer Science, University of Pitesti\\
 Str. Targu din Vale 1, 110040 Pitesti, Romania \\
-% \email{alex.ciobanu@gmail.com, raluca.lefticaru@gmail.com, ionutmihainiculescu@gmail.com,}
+%\email{alex.ciobanu@gmail.com}
 \email{florentin.ipate@ifsoft.ro}
 }
 
@@ -22,7 +26,7 @@ Str. Targu din Vale 1, 110040 Pitesti, Romania \\
 In this article we will attempt to calculate all possible evolutions of a P system using map reduce parallelism and perform context dependent rule coverage testing on the P system. This article is mean to expose the scalability possibilities available with the Big Data ecosystem.  \\
 
 
-\textbf{Keywords:} P systems testing, Hadoop, P system derivation tree, Map Reduc. Big Data.
+\textbf{Keywords:} P systems testing, Hadoop, P system derivation tree, Map Reduce, Big Data, NoSQL 
 
 \end{abstract}
 
@@ -30,85 +34,305 @@ In this article we will attempt to calculate all possible evolutions of a P syst
 
 \section{Introduction}
 
-The field of \emph{membrane computing}, which deals with distributed and parallel computing models called \emph{P systems}, has been a rapidly growing research area in the last ten years. Initially coined by Gheorghe P\u{a}un in \cite{Paun00}, P systems have been intensively studied from a computational perspective as many variants have been introduced and investigated and a substantial set of applications have been identified and modeled with such systems \cite{PaunRS10}. P systems, offers the possibility of modeling natural phenomena with a very natural and logical syntax. Natural phenomena is inherently extremely complex and as such the simulation of the P system which model such phenomena is extremely complex due to its shear size and computational power required. At a certain point the computational power and storage capacity of a single machine is simply insufficient for the simulations and testing of such P system then, grid or clustered computing is considered. In an attempt to not reinvent the wheel we will show a method of using the Map Reduce framework, which is designed to function as massively scalable environment for parallel computing, in the simulation and testing of P systems. 
+The field of \emph{membrane computing}, which deals with distributed and parallel computing models called \emph{P systems}, has been a rapidly growing research area in the last ten years. Initially coined by Gheorghe P\u{a}un in \cite{Paun00}, P systems have been intensively studied from a computational perspective as many variants have been introduced and investigated and a substantial set of applications has been identified and modelled with such systems \cite{PaunRS10}. P systems offer the possibility of modelling natural phenomena using a very natural and logical syntax. Unfortunately natural phenomena are inherently extremely complex and the simulation of P systems which model such phenomena inherit the complexity, therefore requiring significant computational power to process. At a certain point the computational power and storage capacity of a single machine is simply insufficient for the simulations and testing of such P system, at which point grid or clustered computing is considered. In an attempt to reuse established technologies for the computations of P systems we will show a method of using a Map Reduce framework and a NoSQL database in the simulation of P systems. These technologies (which at times fall under the blanket term of Big Data) are designed to leverage large scale commodity hardware clusters as massively scalable environment for parallel computing. We will use Big Data technologies to compute a derivation tree of a non deterministic P system, and show a potential application of such computations. 
 
 \section{Preliminaries}
 
-\subsection*{Map Reduce}
+\subsection{Map Reduce}
 
-MapReduce \cite{Google04} is a frame work developed circa 2004 at Google in an attempt to deal with the very large scale data warehousing needs. Although the Google implementation of the Map Reduce ecosystem is proprietary the Apache foundation developed an open source implementation under the project name Hadoop. It is this implementation we will be using for our experiments. Hadoop has many sub components including a file system, coordination applications, meta programming languages and many other components. For the purposes of our discussion we will focus on the map reduce which is the core layer for developing distributed applications. Map Reduce is conceptually based on functional programming paradigms or to be more specific two primitives call map and reduce. The map function acts upon a vector in one data domain and returns a vector in another data domain. If we has an input vector A = { a1,a2...an } and a function F, then map(A,F) = F(A) = A’ where A’ = {F(a1),F(a2)...F(an)}. As functional programming is not side effect based the data types of A and A’ do not have to be in the same domain but the cardinality will inherently be equal. The section primitive borrowed from function programming reduce, also commonly refereed to as fold, acts upon a vector and returns an aggregation of the elements. If we had our vector V = {v1,v2..vn} and our reduce function G, then reduce(V,G)= v’ where v’= G(v1,G(v2(...G(vn))). In this case the type of V and v’ are the same but the cardinality of the input vector is n while the cardinality of the result is 1. For the purposes of Map Reduce it is assumed and necessary that the reduce function G is associative, commutative, and distributive as to allow of sub grouping of the reduce process. 
+MapReduce \cite{Google04} is a framework developed circa 2004 at Google in an attempt to deal with their very large scale data warehousing needs. Although the Google implementation of the Map Reduce ecosystem is proprietary, Doug Cutting from within the Apache foundation developed an open source implementation under the project name Hadoop. It is this implementation we will be using for our experiments. The Hadoop ecosystem has many subcomponents including a file system, coordination applications, meta programming languages and many other components. For the purposes of our discussion we will focus on the core map reduce functionality developed as a basis for distributed computation within applications. Map Reduce is conceptually based on functional programming paradigms or to be more specific two primitives (higher order functions) call map and reduce.
 
-\subsection*{Parallelism}
+\subsubsection{Map}\label{•}  
+(in functional programming) is defined as a higher order function with type signature: $map  :: (\alpha \rightarrow \beta) \rightarrow [\alpha] \rightarrow [\beta]$. In other words a function that acts upon a vector of data in one data domain $\alpha$ and returns a vector of data in another data domain $\beta$ having transformed from domain $\alpha$ to domain $\beta$ by the given transformational function. In more familiar syntax if we have an input vector $A = [ a1,a2...an ]$ and a function $f$, then $map(A,f) = f(A) = A'$ $where$ $A' = [f(a1),f(a2)...f(an)]$. The data type of the resulting vector does not have to match the data type of initial vector but the cardinality of the two vectors is equal.
 
-Looking at the map and reduce function from a parallelism perspective it is quite natural that they distribute very nicely. Looking at the map function there is no link or sharing between the mapping of individual elements of a vector hence the map function can be executed on a different node of a cluster for each element of a vector with linear scaling, and no performance impact as the number of nodes increases (baring data movement issues). The reduce function shares a similar parallelism capability (assuming associativity, commutativity, and distributivity ) as as little as two elements can be reduced (combine) on each node of the cluster, and given a vector length of n we can theoretically scale to n/2 nodes. it is to note there some communications overheard as reduced data needs to end up at the end on a single node of the cluster to be able to return a single value.  For practical purposes implementation are usually limited to thousands of nodes due to network limitation although larger implementation as suspected to exist at Google and Yahoo.
+\subsubsection{Reduce}\label{•}  
+also refereed to as fold, accumulate, compress, or inject (in functional programming) is defined as a higher order function with type signature $ reduce :: (\alpha \rightarrow \beta \rightarrow \beta) \rightarrow [\alpha] \rightarrow \beta \rightarrow \beta $. In other words a function that acts upon a vector and returns the aggregation of the elements with that vector, aggregating based on the provided function. If we had our vector $V = [v1,v2..vn]$ and our reduce function $g)$, then $reduce(V,g) = v'$ where $v'= g(v1,g(v2(...g(vn)))$ (assuming a left side evaluation). In this case the type of $V$ and $v’$ are the same but the cardinality of the input vector is n while the cardinality of the result is 1. At the same time the reduce function $g$ must be associative, commutative, and distributive as to allow for random ordering in the reduce process. Although in this  example the reduce is left evaluated, evaluation can happen in any direction and in any order.
 
-\subsection*{P system}
+\subsubsection{Map-Reduce}\label{•}
+within the context of Hadoop deviates from this strict definition of functional programming in couple of ways. Most notable is the format of the input and output of both the map and reduce function, which are defined as a tuple of order 2. These tuples also refereed to as a Key Value pair $<K,V>$ are the basis of all interactions with Hadoop. The Map task takes input of a $<K,V>$ pair and produces $i$ $<K,V>$ pairs (where $ 0 \le i \le n $).
+Then all $<K,V>$ pairs where the key is identical are passed to the reduce function. Basically the input of a Reduce function is a key with a list of values $<K,[V,V,V...]>$. In the reducer (the execution of a reduce task) all of the values are reduced together and a series of $i$ $<K,V>$ pairs (where $ 0 \le i \le n $) are produced which are the output of the entire process. The output of one execution can now become the input of next run of the application in series of executions. The Map and Reduce processes are written in Java and the execution of a Map or Reduce task entails running the map or reduce function on a server in a cluster of machines. A Mapper is a server in the cluster which is running a map task at that particular instance in time. Upon initiation of the application all servers run map tasks until the entire input set has been exhausted. Afterwards all servers become reducers and run the reduce function until again all $<K,V>$ pairs produced by the mappers are exhausted. The resultant $<K,V>$ pairs produced by the reducers are written out to the file system. Since all of the processes are run on independent servers with very little shared between processes, clusters can scale up to thousands of servers. 
 
-TODO
+\begin{figure}
+\includegraphics[scale=0.6]{map-reduce.eps}
+\caption{Example of the flow of data with a Map-Reduce execution}
+\end{figure}
+
+\subsection{NoSQL Database}
+
+NoSQL is actually a blanket term to describe a suite database technologies which are not compliant to standard relational paradigms. Most of the underlying concepts come from a Google article \cite{Google06} which describes a technology for distributed databases. NoSQL comprises of many different database technologies including document orient databases, graph databases, columnar stores and the technology we used for our experiments Key-Value stores. Most NoSQL databases use a lightweight mechanism for storing and retrieving data in exchange for greater scalability and availability. Oracle NoSQL database (the implementation of NoSQL used for this article) has similar properties to a map or dictionary from computer science theory. The database is able to store a key value pair, and it's able to retrieve a value based on its corresponding key. In Oracle NoSQL database the keys are defined is a slightly more complex way. A key is composed of two components: a major component and a minor component, which are both a list of strings. 
+
+\begin{figure}
+\includegraphics[scale=0.6]{Key.eps}
+\caption{A diagram of how a key is composed}
+\end{figure}
+
+When data is retrieved from the database, partial keys can be used allowing the retrieval of multiple values at the same time. A partial key (one that only contains the major component and $i$ minor components where $0 \le i <n$ and $n$ is the number of minor components) is used to retrieve multiple keys which are logically linked and are processed together. \\
+
+From a physical data storage perspective NoSQL uses a very similar architecture to a Hadoop cluster. NoSQL achieves its scalability and availability through a distributed storage mechanism. Multiple parallel servers are used to store the data. Usually the data is mirrored across multiple distinct servers. If a server is lost, the data can be retrieved from another server with the same data. At the same time if client requests data from an overloaded server a jump can be made to another server with lower utilization and the same data. Hashing algorithms are employed to eliminate the need for a linear search of all server when retrieving data. In Oracle's NoSQL Database the major component of the keys is used as the indicator for which server to use, as an effort is made to keep all keys with identical major components together on one server. This enables faster multi-retrieve executions.
+
+\begin{figure}
+\includegraphics[scale=0.6]{NoSQL.eps}
+\caption{A diagram of a NoSQL physical deployment}
+\end{figure}
+
+There is an important side effect of distributed databases relating to the consistency of data, or better said the lack there of. NoSQL databases uses a term called eventual consistency which states given a long enough period in which no updates occur, the system will reach a consistent state, but at an particular point in time there is no guarantee the system will be consistent. Given the distributed nature of the storage (usually triple mirroring) an update pushed to one sever is not guaranteed to propagate to all servers before a reading of the exact data point, hence a read might offer an old version of that data point. These limitations must be considered when designing an application against a NoSQL database.   
+
+\subsection{Parallelism}
+
+Looking at the map and reduce function from a parallelism perspective it is quite natural that they distribute very nicely. Looking at the map function there is no link or sharing between the mapping of individual elements of a vector hence the map function can be executed on a different node of a cluster for each element of a vector with linear scaling, and no performance impact as the number of nodes increases (baring data movement issues). The reduce function shares a similar parallelism capability (assuming associativity, commutativity, and distributivity) as little as two elements can be reduced (combined) on each node of the cluster, and given a set of unique $n$ keys we can theoretically scale to $n$ node cluster. It is to note there is some communications overheard as reduced data needs to end up at the end on a single node of the cluster to be able to return a single value.  For practical purposes implementation is usually limited to thousands of nodes due to network limitation although larger implementations are suspected to exist at web 2.0 corporations.
+
+\subsection{Psystem}
+
+A Psystem is a computational model inspired by the chemical reactions across cell membranes. The formal definition with which we will be working is:
+
+\begin{defn}
+A Psystem is a tuple
+\begin{equation*}
+    \Pi=(\mathcal{V}, \mu, \mathcal{W}_1,\ldots  , \mathcal{W}_n, \mathcal{R}_1 \ldots \mathcal{R}_n )
+\end{equation*}
+where
+\begin{itemize}
+  \item $\mathcal{V}$ is the alphabet (a finite and nonempty) set of objects 
+  \item $\mu$ is the membrane structure, a hierarchical arrangement of compartments named membranes identified by integer 1 to n
+  \item $\mathcal{W}_i$ where $0 \le i \le n$  are strings over $\mathcal{V}$, describing the multisets of objects initially placed in the $i$ regions of $\mu$. The membrane structure is denoted by left and right brackets $([ and ]_i)$ labelled with $i$th membrane it refers to.
+  \item $\mathcal{R}_i$ $0 \le i \le n$ is a finite set of evolution rules for each region $i$ where evolution rule $r$ is of the form
+      \begin{equation}
+        r :u \rightarrow (a_1,t_1) \ldots (a_n,t_n)
+      \end{equation}
+      where $u$ and $a_1$ is a multiset over $\mathcal{V}$, and $t_i$ is an element from $\mu$. $t_i$ is limited to the current membrane, the region immediately outside the current region or any of the region immediately inside the current region.      
+\end{itemize}
+\end{defn}
+
+Although many variations on Psystem exist, for the purposes of this article we will concern ourselves with only this very basic definition (above) to look at how Big Data technologies can help in handling the state explosion problem. Complications such as polarization can be added to the computations as long as they do not interfere with the parallelism element. It is also important to note that although this definition can have Psystems which can only have one possible evolution path our focus will be on non-deterministic Psystem with multiple possible evolutions for every membrane, for every configuration.  
+
+\subsection{Derivation Tree}
+
+A derivation tree is a directed acyclic graph representation of the evolutions of a Psystem. The graph has a single root node (which represents the initial multiset of the Psystem), and every edge represents a possible evolution of the Psystem. All subsequent nodes in the graph are possible evolutions of the Psystem where the edges leading to the node represent the rules which must be applied to reach that configuration. Our derivation three assumes maximal and parallel execution. For example if we had the following Psystem:\\
+
+\begin{equation*}
+\Pi = (\mathcal{V},\mu,\mathcal{W}_1,\mathcal{R}_1),
+\end{equation*}
+where
+\begin{itemize}
+\item $\mathcal{V} =\{ab\}$
+\item $\mu = []'1$ 
+\item $\mathcal{W}_1=a^2$
+\item $\mathcal{R}_1=\{ r_1 : [a]\rightarrow[ab]; r_2 : [a]\rightarrow[b] \}$
+\end{itemize}
+
+We would see the following derivation tree:
+
+\begin{figure}
+\includegraphics[scale=0.6]{derivationTree.eps}
+\caption{A sample of a derivation tree}
+\end{figure}
 
 \section{Practical Note}
 
-Given the potential high number of node failure slowdowns during a MapReduce job the infrastructure provided by Hadoop does data mirroring and multiple nodes as well as task fail-over from slow nodes to faster ones amongst its many tasks. For the purposes of our our experiments we will abstract this layer out and out and simply write the map and reduce functions and serve them to the infrastructure. As node failure, network slowdowns, repetition of tasks etc are both unpredictable and abstracted out the scaling results provided in this article come with a potential error factor.
+In large scale deployment of a distributed system (100 - 1000 of servers) there is a high potential for server  failure, slowdowns during a MapReduce job and data loss, for which Hadoop infrastructure has contingencies to deal with. These include data replication across servers (to deal with server loss) and speculative execution to deal with individual server performance issues. For the purposes of our experiments we will abstract this layer out and simply write the map and reduce functions and serve them to the infrastructure. As node failure, network slowdowns, repetition of tasks etc are both unpredictable and abstracted out the timing results provided in this article come with a potential error factor. Repeated experiments will produce the same results but with different execution times, although these deltas are usually within an acceptable margin. More details of the delta in the experiments section. 
 
 \section{Building a P-system derivation tree with Hadoop \& NoSQL Database}
 
-Developing a derivation tree for a P-system requires the calculation of all possible evolution of each node in the tree recursively. As each node's evolution is absolutely independent of another is calculation can be performed independently and most importantly in parallel. To facilitate the parallelism the Hadoop infrastructure is used to manage all of the complexities and execution of the parallelism. The storage of the P-system and the derivation tree is done in a Key value NoSQL database with the following data structure. 
+In developing the derivation three of a Psystem we will be using the Oracle NoSQL database and Hadoop to facilitate a massively parallel calculation of the derivation tree. The use of these technologies bring several complications as to ensure all relevant steps are parallelizable. In that we have developed the following distinct steps which are followed in sequence in order to calculate the derivation tree. They are
 
-Do note as described above, keys  are composed of a major component and a minor component, where each can be a string or an List of strings.
+\begin{enumerate}
+  \item Load the components $(\mathcal{V},\mu,\mathcal{W},\mathcal{R})$ of the Psystem into the NoSQL database 
+  \item Calculate all possible rule combinations for each multiset at the current level of the derivation tree
+  \item Calculate the multisets which are produced by applying the rule sequences discovered in step 2
+  \item Repeat Step 2 and 3 for the next level of the derivation tree
+\end{enumerate}
 
-The P-system is stored as followed:
+It is important to note that we are creating the derivation tree in a breath first manner where all of the nodes for a level $n$ are calculated before any of the nodes for level $n+1$ are discovered. 
 
-The rules are store as tuple of integer array. The first array in the tuple represents the objects consumed by the rule and the second array represents the objects created by the rule. Each array corresponds to a parallel array with the alphabet. Each value in the rule array represents the number of object of alphabet  I that are created or used when applying that particular rule. For example. 
+\subsection{Representing a Psystem as a series of $<K,V>$ pairs}
 
-If we had
-Alphabet = [a,b,c,d,e,f]
-Rule = a,2*b,3*c →2*d,1*e 
+A $<K,V>$ is a very simple model for storing data and as such there are theoretically many ways in which a P system can be represented as a series of pairs. For our implementation we focused on developing a model that is most conducive to the derivation tree calculations we wanted to do. As such there was an explicit effort in using integers to represent elements of the Psystem rather than strings, as integer operations are much more efficient than string operations. Further integer representations allow for matrix and vector mathematics to be directly applied during our computations without the need to consider how strings would be handled. The second design decision was to group elements together by their use within our calculations and not by how they fit in logically within a Psystem. Given these design principles we used the following $<K,V>$ pairs to represent a Psystem $\Pi=(\mathcal{V}, \mu, \mathcal{W}_1,\ldots  , \mathcal{W}_n, \mathcal{R}_1 \ldots  , \mathcal{R}_n)$.
 
-The array representation of the rule would be:
+\begin{description}
+  \item[Alphabet $\mathcal{V}$] \hfill \\
+  There is a single key which stores the alphabet. Its corresponding value is a java serialized object which stores an array of strings representing the alphabet. This is the only place the actual alphabet is stored, and any further mention of a alphabet object is done through the integer index of this array. For example if our alphabet is $\mathcal{V} = [\alpha,\beta,\gamma,\delta]$ then to refer to $\alpha$ one would simple use the number 0, number 1 for $\beta$, number 2 for $\gamma$ and so forth. 
+  \item[Membrane Structure $\mu$] \hfill \\
+  The absolute membrane structure is not very interesting to our calculations, rather the children and parent membranes of each membrane is useful. As such for each membrane there are two $<K,V>$ pairs stored. One which stores the children of that membrane (as a Java serialized array of string) and one which stores the parent membrane (as a simple strings). This is also a $<K,V>$ pair which holds a list of all membranes IDs (without any semantic information) to enable iteration through all membranes.  
+  \item[Rules $\mathcal{R}$] \hfill \\
+  The rules are the most performance critic element of our application as they are used in many of the calculations that are done. The rules are grouped by membrane and split by sides of the equation as that is how they will be consumed. The rules are stored as integer matrices where each row represents a rule and each column represents an alphabet object. For example if we had  \\[3ex]
+$\mathcal{V} = [abc]$ \\ $\mathcal{R}_1 = a^1 c^2 \rightarrow a^2 b^1$ \\ $ \mathcal{R}_2 = b^2 \rightarrow a^2c^1 $ \\[3ex] then  
+the first matrix will be all an aggregation of all of the left sides of the rules. We call this the consumers
 
-[ [1,2,3,0,0,0] , [0,0,0,2,1,0] ]
+consumers = $\begin{bmatrix} 1 & 0 & 2 \\  0 & 2 & 0  \end{bmatrix} $ 
 
-All of the rules for one membrane are stored together in an array as they will always be preceded together. The key structure is:
+The second matrix will be an aggregation of all of the right sides of the rules. We call this the producers
 
-Major component = rules
-Minor component = <membrane number>
+producers = $\begin{bmatrix} 0 & 2 & 0 \\  2 & 0 & 1  \end{bmatrix} $ 
 
-This representation allows all calculations be be executed directly on numbers with using complex data  types and iterators and increasing the efficiency of the code for very complex rules.
+For each membrane there will be these two matrices stored as Java serialized objects of two dimensional arrays. The decision to split the rules into left side and right side was made out of the realization that these two elements will be used independently of each other. 
+When dealing with rules which produces objects in multiple membranes we transform the matrix into a cube where the third dimension maintains a list of all relevant membranes. 
 
-The membranes list is maintained (also as an array) but for this demonstration it is ignored to reduce complexity. Inter membrane communication can be simulated using extended versions of the alphabet as per article [3].   
+\begin{minipage}{\textwidth}
+    \centering
+    \includegraphics[scale=0.6]{cube.eps}
+    \captionof{figure}{Cube representation of the rules of a membrane}
+\end{minipage} \\ 
 
-Each multiset is stored as an array of numbers similar to the way rules are stored where each number represents the number of time each object exists in that particular multiset. 
+This store mechanism assumes a dense coding of the objects and is very efficient if most of the alphabet objects are used in every rule. If there is a very sparse use of objects within rules then this coding mechanism may use excess store. \\
 
-Each node of the derivation tree stores one multiset. But the tree is stored for easier breath searches as that will the preferred method of walking the tree.
+\item[Multiset $\mathcal{W}$] \hfill \\
+The multisets are stored as an array of integers, similar to the way rules are stored. The index of a multiset array corresponding to an object from the alphabet and the integers stored represents the multiplicity of that object. 
 
-Each node of the three has the following key structure
+\end{description}
+ 
+\subsection{Storing a derivation tree as a series of $<K,V>$ pairs}
 
-Major Component: List ( Level of tree ,  membrane number )
-Minor Component:  ( Unique id )
+\subsection*{Nodes}
+To represent a tree as a series of $<K,V>$ we use the most natural split where each node of the derivation tree is a separate $<K,V>$ pair. Each node in the derivation tree stores two elements, the multiset (as described in section 4.1) and a string which identifies the parent node. This pointer to the parent is useful in traversing the tree backwards from leaf to root. For Psystems which have multiple membranes each membrane has its own node, so a configuration of the Psystem is actually comprised of multiple $<K,V>$ pairs. When storing a node of the derivation tree the key under which it is stored contains a significant amount of meta-data. In defining the key we exploit the make-up of a key described in section 2.2. There are three different pieces of information stored in the key of a node.  
 
-For each node of the tree there are two additional data points stored in the database. This first is an enumeration off the children a particular node has. 
+\begin{enumerate}
+  \item The level of the derivation three this node corresponds to 
+  \item The membrane of the Psystem this node corresponds to 
+  \item An unique id for this particular configuration.
+\end{enumerate}
 
-Major Component: parent Unique id 
-Minor Component: Null
+The first two make up the major component of the Key while the third make up the minor component: \\ \\
+Major Component: List ( Level of tree ,  membrane number ) \\
+Minor Component: ( Unique id ) \\
 
-The second is a hash value of the node values with a pointer to the original node within the tree. This particular element is useful in find duplicates within the tree and adding pointers where duplicates are found to eliminate superfluous calculations.
+This is important to node the the Unique id does not uniquely identify a node in the derivation tree, and is only unique in combination with the membrane number. For example if there are 5 membranes in the Psystem then there should be 5 different nodes with the identical Unique id, one for each membrane, and combined they make up one configuration. This is done so each $<K,V>$ pair in the database is the minimum unit for calculation, as the derivation of a membrane is completely independent of all other membranes. This will fit in very nicely into the MapReduce tasks described in the next section.
+
+\subsection*{Edges}
+
+For each node of the tree there are two additional data points stored in the database. These represent the meta-data which would normally be stored in the edges of the graph. 
+
+\begin{enumerate}
+  \item A list of all child configuration for each Unique ID
+  \item A list of all rules applies on a particular evolution
+\end{enumerate}
+
+This information is stored separate to the tree nodes as it applies to multiple nodes simultaneously. Each node represents only one membrane from a configuration and it is trivial which membrane is the child of which membrane. This mapping can only be done at the configuration level as there is a directly link between the parent and child of a configuration. The same applies to rules applied. It is very difficult to separate which rules produced all of the objects in a particular membrane given membrane communication as such the rules applied are per configuration not per node. As described in the previous section the Unique ID identifies a configuration so it is quite easy to store a  $<K,V>$ where the key is a the unique ID and the value is a Java serialized array of all the children or a list of rules applied. These two supplementary $<K,V>$ enable the traversing of the tree in a logical way. 
+
+\subsection{Determining all possible evolutions}
+
+One of the most critical and performance intensive aspects of developing the derivation tree is figuring out all of the possible evolutions of a configuration. This section in non parallelizable the performance of the application is gated on this algorithm. Further the ability to apply a rule is dependent on the application of all the other rules this computation becomes a linear search to a potentially very large test set. In this section we have developed two algorithms, one for the general case, and one optimized for a specific case.
+
+\subsubsection*{ General Case Algorithm}
+
+To calculate all of the possible evolutions of a Psystem from a given configuration for the general case where there is not apriori information about the rules within a membrane we use a brute force algorithm. This algorithm goes through the each of the rules and discovers the maximum number of the that particular rule can be applied in a context independent space (i.e. ignoring all other rules). Next we calculate all of the possible vectors or rules which could possible by applied. for a Pystem where the maximum time $rule_i$ came be applied is $max(r_i)$ then there should be $\Pi max(r_i)$ combinations. Once every possible combination is calculated each one of these vectors is tested for correctness and maximality. If they pass both criteria then they are stored in list of possible evolutions of the Psystem in that particular configuration. The algorithm for check a possible vector is.
+
+To describe our function we have the following definitions:\\
+$\mathcal{R}$ is the vector or rules in the membrane \\
+$\mathcal{X}$ is the vector or rules under test \\
+$\mathcal{M}$ is the configuration (multiset) of the membrane\\
+$applyAllRules$ is a function which take a vector of rules and returns the multiset resultant from applying those rules\\
+$applicable$ check if rule $r$ is applicable given the multiset $s$\\
+The algorithm is:
+\begin{algorithmic}
+\STATE $\mathcal{C} \leftarrow applyAllRules(\mathcal{R})$
+\IF {$ \mathcal{C} = \mathcal{M} $ }
+    \RETURN maximal
+\ELSE
+    \FORALL { $c \in \mathcal{C}$ } 
+        \IF { $|c_i| > |m_i|$ }
+        	\RETURN incorrect
+        \ENDIF
+    \ENDFOR
+    \FORALL { $r \in \mathcal{R}$ } 
+        \IF { $applicable(r,\mathcal{M} - \mathcal{C} )$ }
+        	\RETURN not maximal
+        \ENDIF
+    \ENDFOR
+     	\RETURN maximal
+\ENDIF
+\end{algorithmic}  
+
+Once every possible combination of rules have tested with this algorithm, the rules vectors which return maximal are the vectors which produce all possible evolutions of the Psystem from the specified configuration. 
+
+\subsubsection*{ Special Case Algorithm}
+
+If we impose certain certain restriction on the rule possible new solving mechanisms appear for finding all possible maximal combinations of rules. To demonstrate: \\
+
+We know that for a given a multiset $\mathcal{M}$ and a set of rules $\mathcal{R}$ where $r_i$ is of the form $\mathcal{U} \rightarrow (a_1,t_1) \ldots (a_n,t_n)$ and $|r_i|$ represent the number of times a rule $i$ is applied, 
+
+\begin{equation}
+    \forall m \in \mathcal{M}, \Sigma |r_i| \leq |m| 
+\end{equation}
+where $\mathcal{U}$ of $r_i \unrhd m$. \\ \\
+But if
+\begin{equation}
+    \forall v \in  \mathcal{V} \exists r \in \mathcal{R} : r = v \rightarrow \alpha   
+\end{equation}
+where $\mathcal{V}$ is the alphabet of the Psystem and \\
+where $\alpha$ is an arbitrary vector over $\mathcal{V}$
+then 
+\begin{equation}
+    \forall m \in \mathcal{M}, \Sigma |r_i| = |m| 
+\end{equation}
+which gives us a system of linear equations which are solvable. Combine 
+\begin{equation}
+    \forall m \in \mathcal{M}, \Sigma |r_i| = |m| 
+\end{equation} \\
+combine that with the fact that $|r_i| \in \mathbb{N}$
+
+and the solutions to the above equation given the restriction are all of the possible combination of rules which satisfy the maximality requirements.
+\subsubsection*{ Numerical Example:} 
+If we had the following configuration: \\ \\
+ $\mathcal{V} = [a,b,c]$ \\ \\ $\mathcal{M} = [a^4,b^5,c^3]$ \\  \\ $ \mathcal{R} = \begin{cases} r_1 = a^1,b^1 \rightarrow \alpha \\  r_2 = a^1,c^1 \rightarrow \alpha \\  r_3 = a^1 \rightarrow \alpha \\  r_4 = b^1 \rightarrow \alpha \\  r_5 = c^1 \rightarrow \alpha  \end{cases} $  
+where $\alpha$ is any arbitrary set over $\mathcal{V}$ \\[3ex]
+By expanding the equation (4) we get \\[3ex]
+$ \begin{cases} |r_1| + |r_2| + |r_3| = 4 \\ |r_1| + |r_4| =5 \\ |r_2| + |r_5| = 3 \end{cases} $ \\[3ex]
+We can rewrite that in the form  $\mathcal{A} * x = \mathcal{B}$ where $x$ is the number of time each rule is applied, $\mathcal{B}$ is $\mathcal{M}$ and  \\[3ex]
+$\mathcal{A}$ = $ \begin{bmatrix} 1 & 1 & 1 & 0 & 0 \\ 1 & 0 & 0 & 1 & 0 \\ 0 & 1 & 0 & 0 & 1 \end{bmatrix} $ \\
+
+If we perform Gaussian elimination on this matrix with the solution we get \\[3ex]
+$ \begin{bmatrix} 1 & 0 & 0 & 1 & 0 & 5 \\ 0 & 1 & 0 & 0 & 1 & 3 \\ 0 & 0 & 1 & -1 & -1 & -4 \end{bmatrix} $ \\[3ex]
+From here we have two free variables, we will call them $t_1$ and $t_2$ and the solution is: \\[3ex] 
+$ \begin{cases}  r_1 = 5 - t_1 \\  r_2 = 3- t_2 \\  r_3 = -t_1 -t_2 + 4   \\  r_4 = t_1 \\  r_5 = t_2 \end{cases} $ \\[3ex]
+which produces an infinite number of solution, but when know that $|r_i| \in \mathbb{N}$ so we can add the following restrictions on $t_1$ and $t_2$ \\[3ex]
+$ \begin{cases}  0 \geq t_1 \geq 5  \\  0 \geq t_2 \geq 3  \\  t_1 + t_2 \leq 4  \end{cases} $ \\
+
+and if we plug in all acceptable values for $t_1$ and $t_2$ into the solution matrix we get the 14 different possible evolutions of that particular configuration.
+
+This algorithm is not exceptionally efficient as Gaussian elimination is $O(n^3)$ but as rules in a membrane do not change through the evolution of the Psystem we can solve the equation for a generic multiset and then simple plug in the values when calculating all possible evolutions. This will significantly reduce the amount of time required to calculate all possible evolutions. 
+
+\subsection{Determining next level's nodes }
+
+Once we have calculated all possible evolutions of a particular configuration of a Psystem then the calculation of the next level of the derivation tree is quite straight forward. We follow the following steps.
+
+\begin{enumerate}
+  \item Take one possible rule application sequences (calculated in section 4.3)
+  \item Given the particular input set apply the rule combination and get the output multiset
+  \item Take that multiset and do a cross product with the multisets of all of the other membranes available for unique ID
+  \item Break up the resultant configuration and store each node in a unique key in the database
+  \item Repeat for all rule application sequences and possible cross products with different membranes   
+\end{enumerate}
+
+Following these steps should be able to compute all of the children nodes for a particular configuration of the Psystem. 
+
+\subsection{The Map Reduce implantation}
+
+Developing a derivation tree for a P-system requires the calculation of all possible evolution of each node in the tree recursively. As each node's possible evolution is absolutely independent of another is calculation can be performed independently and most importantly in parallel. To facilitate this parallelism we use the Map construct of the Hadoop infrastructure, as it allows us to parallelize very naturally this calculation. As the calculation of the next level's nodes requires the aggregation of multiple membrane's possible evolutions the Reduce construct is used to perform this. Each MapReduce cycle calculates one more level of the derivation tree, and as multiple calls are made to the MapReduce infrastructure the output of one cycle becomes the input for the next cycle. In other words the Map task implements the one of the algorithms described in section 4.3 and stores the results under the Unique Id of the configuration.
+
+The Reduce tasks receives all of the results from the MAP task for a particular configuration (a list who's cardinality is equal to the number of membranes in a configuration). In the Reduce task a cross product between the possible configurations of each membrane  is performed and stored as the nodes of the next level. For example if we have 3 membranes and the rules each membrane has 4 possible evolutions then we would store 192 nodes in the derivation three (assuming all of the configurations produce objects in all of the membranes). The cross product of all of the possible evolutions is 4 X 4 X 4 with is 64. But each of those configuration has objects in all three membranes, and in the derivation tree a node only represents one membranes hence for each configuration there will be 3 nodes stores hence 64 X 3 = 192. 
 
 \section{Experimental Scaling results}
 
-We developed several P-system of significant size and determined the time required to generate a derivation three of 10 levels for a particular P-system. We also varied the number of nodes in the cluster to be able to get an idea of scaling possibilities.
+We developed several P-system of significant size and determined the time required to generate a derivation three of $n$ levels for a particular P-system. We also vary the number of servers in the cluster to be able to get an idea of scaling possibilities. For the experiments performed (unless explicitly stated otherwise) there will be 12 servers in the Hadoop cluster, and 12 NoSQL Database store servers. These two services Haddop MapReduce server and NoSQL storage server will be started on the exact same physical machines.   
 
-We used a cluster of 1,2,5,10,20,40 nodes with a P-system of a single membrane and 10 000 rules. Alphabet size 1000. This P-system requires 4 Kb to sore a single node hence more then 1000000 nodes can be stored in our database. 
+\subsection{Testing with different numbers of servers}
 
-We also also performed an experiment on all 40 nodes and continues to increase the number of rules per membrane to see the amount of time required to create the entire derivation tree. 
+We will also vary the cluster size from of 6 to 12 identically configured server with a P-system of a single membrane and 1000 rules to determine scaling factor. The results were:
 
-\section{Experimental P system testing results}
+\subsection{Testing different algorithms}
 
-The derivation three created was used to create simple and context dependent rule coverage test cases for the P-system. On 40 nodes given each P-system in the previous test, the following results we achieved. 
+We experimented with the different algorithms described in section 4.3 to notice the performance difference between the algorithms. These are the results:
 
+\subsection{Testing Number of Nodes}
 
-\textbf{Acknowledgments.}
+We used a very simple Psystem with only a couple of rules to test how many nodes we could store in the Database and how much space would be required. These were the results
+
+\subsection{Testing size of Psystem}
+
+The final set of tests performed were to test how big we could make the Psystem. We tested using the most efficient alorithm for node derivation and 12 server and got the following execution times: 
+
+\textbf{Acknowledgments}
 This work was supported by
-
 
 \begin{thebibliography}{99}
 
@@ -124,9 +348,9 @@ P\u{a}un, G., Rozenberg, G., Salomaa, A. (eds.): The Oxford Handbook of Membrane
 
 \bibitem{Google04}
 Jeffrey Dean and Sanjay Ghemawat: MapReduce: Simplified Data Processing on Large Clusters, Sixth Symposium on Operating System Design and Implementation, December 2004
- 
-%\bibitem{CiobanuPJP06}
-%Ciobanu, G., P\u{a}un, G., P{\'e}rez-Jim{\'e}nez, M.J. (eds.): Applications of Membrane Computing. Natural Computing Series, Springer (2006)
+
+\bibitem{Google06}
+Fay Chang, Jeffrey Dean, Sanjay Ghemawat, Wilson C. Hsieh, Deborah A. Wallach, Mike Burrows, Tushar Chandra, Andrew Fikes, and Robert E. Gruber Bigtable: A Distributed Storage System for Structured Data, Seventh Symposium on Operating System Design and Implementation, November 2006
 
 \bibitem{LefticaruJISTF10}
 R. Lefticaru, F. Ipate, M. Gheorghe. Model checking based test generation from P systems using P-lingua. Romanian Journal of Information Science and Technology, 13(2): 153-168, 2010. Special Issue on Membrane Computing containing selected papers from BWMC 2010.

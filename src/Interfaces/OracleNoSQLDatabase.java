@@ -544,7 +544,7 @@ public class OracleNoSQLDatabase implements AbstractDatabase {
 	}
 	
 	@Override
-	public void StoreMembraneSolutionMatrix(String membraneID, int[][] solutionsMatrix, List<String> constants) 
+	public void StoreMembraneSolutionMatrix(String membraneID, float[][] solutionsMatrix, List<String> constants) 
 	{
 		ByteArrayOutputStream solution = new ByteArrayOutputStream();
 		ByteArrayOutputStream consts = new ByteArrayOutputStream();
@@ -578,10 +578,10 @@ public class OracleNoSQLDatabase implements AbstractDatabase {
 	}
 	
 	@Override
-	public int[][] RetriveMembraneSolutionMatrix(String membraneID) 
+	public float[][] RetriveMembraneSolutionMatrix(String membraneID) 
 	{
 		
-		int[][] data;
+		float[][] data;
 		try 
 		{
 			Key myKey = Key.createKey("solutionSolverMatrix",membraneID); 
@@ -595,7 +595,7 @@ public class OracleNoSQLDatabase implements AbstractDatabase {
 			byte[] datatRecords = (byte[]) temp.array();
 			ByteArrayInputStream bi = new ByteArrayInputStream( datatRecords );
 	        ObjectInputStream in = new ObjectInputStream(bi);
-	        data = (int[][]) in.readObject();
+	        data = (float[][]) in.readObject();
 		} catch (IOException e) 
 		{
 			e.printStackTrace();
