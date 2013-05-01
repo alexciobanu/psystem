@@ -500,7 +500,7 @@ public class OracleNoSQLDatabase implements AbstractDatabase {
 	}
 
 	@Override
-	public void StoreAppliedRules(String NodeId, Object data) 
+	public void StoreAppliedRules(String NodeId, MultiMembraneMultiset data) 
 	{
 		ByteArrayOutputStream bo = new ByteArrayOutputStream();
 		ObjectOutputStream out;
