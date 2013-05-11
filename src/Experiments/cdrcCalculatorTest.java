@@ -23,37 +23,32 @@ import org.apache.avro.Schema;
 import org.apache.avro.generic.GenericData;
 import org.apache.avro.generic.GenericRecord;
 
+import Interfaces.AbstractDatabase;
 import Interfaces.DatabaseAccess;
+import Interfaces.MultiMembraneMultiset;
 import Interfaces.NodeData;
+import Interfaces.OracleNoSQLDatabase;
 
 public class cdrcCalculatorTest 
 {
 	static Key key;
 	static DatabaseAccess db;
+	static AbstractDatabase db2;
 	
 	public static void main(String[] args) throws IOException, ClassNotFoundException 
 	{
-		GenericRecord record = getRecord();
-		Key keyArg = key;
-		String level = (keyArg.getMajorPath()).get(0);
-	    String membrane = (keyArg.getMajorPath()).get(1);
-	    String uuid = (keyArg.getMinorPath()).get(0);
-	    
-		int buff = Integer.parseInt( level.substring(5, level.length()) );
-		buff++;
-		String nextLevel= "level"+buff;
-	    
-        ByteBuffer temp = (ByteBuffer) record.get(1);
-	    ByteArrayInputStream bi2 = new ByteArrayInputStream(temp.array());
-        ObjectInputStream in2 = new ObjectInputStream(bi2);
-        long[] currentRule = (long[]) in2.readObject();
+		db2 = new OracleNoSQLDatabase("PsystemStore","hadoop1:5000");
+		String[] membranes = db2.retriveMembraneList();
+		List<String> IDs = db2.retriveLevelIDs(0, membranes[0]);
+		ArrayList<String> allChildren = db2.RetrieveChildren(IDs.get(0));
+		db2.RetriveAppliedRules(allChildren.get(0));
 
-                
-        ArrayList<int[]> allChildren = getChildren(uuid,nextLevel,membrane);
-        DatabaseAccess db = new DatabaseAccess("PsystemStore","machine1:5000");
-        List<String> majorComponent = Arrays.asList("CDRCrules",membrane);
-        for(int[] aChild: allChildren)
+	    MultiMembraneMultiset appliedRules = db2.RetriveAppliedRules(allChildren.get(0));
+	    
+        List<String> majorComponent = Arrays.asList("CDRCrules",membranes[0]);
+        /*for(String aChild: allChildren)
         {
+        	MultiMembraneMultiset childRules = db2.RetriveAppliedRules(aChild);
         	for(int i=0;i<currentRule.length;i++)
         	{
         		if (currentRule[i]>0)
@@ -77,7 +72,7 @@ public class cdrcCalculatorTest
         			}
         		}
         	}
-        }
+        }*/
 	}
 	
 	public static String getParentRules(String level, String membrane, String uuid) throws IOException, ClassNotFoundException
@@ -132,27 +127,5 @@ public class cdrcCalculatorTest
         //ObjectInputStream in2 = new ObjectInputStream(bi2);
 		//int[] rulesArray = (int[]) in2.readObject();
 		return rules;
-	}
-	
-	static GenericRecord getRecord() throws IOException
-	{
-		KVStoreConfig config = new KVStoreConfig("kvstore", "localhost:5000");
-		KVStore store = KVStoreFactory.getStore(config);
-        Iterator<KeyValueVersion> levelIterator = store.storeIterator(Direction.UNORDERED, 0, Key.createKey("level1"), null, null);
-        AvroCatalog catalog = store.getAvroCatalog(); 
-        File f = new File("/home/a/kv-2.0.23/node.avsc");
-        Schema.Parser parser = new Schema.Parser();
-        parser.parse(f);
-        Schema schema = parser.getTypes().get("nodeRecord"); 
-        GenericAvroBinding binding = catalog.getGenericBinding(schema);
-        while( levelIterator.hasNext())
-		{
-	        GenericRecord inputRecord = new GenericData.Record(schema);
-	        KeyValueVersion bla = levelIterator.next();
-	        inputRecord  = binding.toObject(bla.getValue());
-	        key = bla.getKey();
-			return  inputRecord;
-		}
-		return null;
 	}
 }

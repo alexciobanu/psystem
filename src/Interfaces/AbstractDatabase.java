@@ -32,9 +32,9 @@ public interface AbstractDatabase
 	
 	void StoreChildren(String NodeId,  ArrayList<String> data);
 	
-    Object RetriveAppliedRules(String NodeId);
+	MultiMembraneMultiset RetriveAppliedRules(String NodeId);
 	
-	Object RetrieveChildren(String NodeId);
+	ArrayList<String> RetrieveChildren(String NodeId);
 	
 	public Value createNodeValue(NodeData theNode);
 	

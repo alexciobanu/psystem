@@ -652,10 +652,10 @@ public class OracleNoSQLDatabase implements AbstractDatabase {
 	}
 
 	@Override
-	public Object RetriveAppliedRules(String NodeId) 
+	public MultiMembraneMultiset RetriveAppliedRules(String NodeId) 
 	{
 		
-		Object data;
+		MultiMembraneMultiset data;
 		try 
 		{
 			Key myKey = Key.createKey(NodeId,"appliedRules"); 
@@ -669,7 +669,7 @@ public class OracleNoSQLDatabase implements AbstractDatabase {
 			byte[] datatRecords = (byte[]) temp.array();
 			ByteArrayInputStream bi = new ByteArrayInputStream( datatRecords );
 	        ObjectInputStream in = new ObjectInputStream(bi);
-	        data = (Object) in.readObject();
+	        data = (MultiMembraneMultiset) in.readObject();
 		} catch (IOException e) 
 		{
 			e.printStackTrace();
