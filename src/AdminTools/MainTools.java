@@ -107,14 +107,12 @@ public class MainTools
 			}
 			else if ("showCDRC".equalsIgnoreCase(args[2]))
 			{
-				//TODO CRDC 
-		        //ps.printCDRCpairs();
+				db.retrieveAllCDRCPair(false);
 			}
 			
 			else if ("showCDRCSize".equalsIgnoreCase(args[2]))
 			{
-				//TODO CDRC
-				//ps.printCDRCpairsSize();
+				System.out.println("There are: " + db.retrieveAllCDRCPair(true) + " CDRC pairs left");
 			}		
 			else
 			{
@@ -125,9 +123,8 @@ public class MainTools
 	
 	public static void initCDRC(String storeName, String hosts)
 	{
-		//TODO CDRC
-		//FindCdrcPairs cdrc = new FindCdrcPairs(storeName, hosts);
-		//cdrc.getContextDependentRules();
+		FindCdrcPairs cdrc = new FindCdrcPairs(storeName, hosts);
+		cdrc.getContextDependentRules();
 	}
 	
 	public static void viewLevel(String level) throws IOException, ClassNotFoundException

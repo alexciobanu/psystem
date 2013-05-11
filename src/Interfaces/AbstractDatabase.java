@@ -60,6 +60,12 @@ public interface AbstractDatabase
 	
 	public void StoreMembraneSolutionMatrix(String membraneID, float[][] solutionsMatrix, List<String> objects);
 	
+	public void storeCDRCPair(int producerRule, String membranes, int consumerRule, String membranes2);
 	
+	int retrieveAllCDRCPair(boolean suppressOutput);
 	
+	public boolean checkAndRemoveCDRCPair(int producerRule, int producerMembrane, int consumerRule, int consumerMembrane);
+
+
+
 }

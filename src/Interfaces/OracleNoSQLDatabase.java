@@ -52,10 +52,15 @@ public class OracleNoSQLDatabase implements AbstractDatabase {
 	
 	public OracleNoSQLDatabase(String storeName, String hosts)
 	{
-		String argv[]= new String[2];
-		argv[0]=storeName;
-		argv[1]=hosts;
-		initDatabase(argv);
+		if(instance == null) 
+	    {
+
+			String argv[]= new String[2];
+			argv[0]=storeName;
+			argv[1]=hosts;
+			initDatabase(argv);
+			instance=this;
+	    }		
 	}
 	@Override
 	public void initDatabase(String[] argv) 
@@ -712,5 +717,50 @@ public class OracleNoSQLDatabase implements AbstractDatabase {
 		}      
        
 		return nodesList;
+	}
+
+	@Override
+	public void storeCDRCPair(int producerRule, String producerMembrane, int consumerRule, String consumerMembrane) 
+	{
+		List<String> majorComponents = Arrays.asList("CDRC",producerMembrane , Integer.toString(producerRule) );
+		List<String> minorComponents = Arrays.asList(consumerMembrane , Integer.toString(consumerRule) );
+		Key myKey = Key.createKey(majorComponents,minorComponents); 
+		GenericData.Record record = new GenericData.Record(schema);
+	    ByteBuffer buffer = ByteBuffer.wrap(new byte[0]);
+	    record.put("data", buffer);
+	    Value KVvalue = binding.toValue(record);
+        store.put(myKey, KVvalue);	
+	}
+
+	@Override
+	public int retrieveAllCDRCPair(boolean suppressOutput) 
+	{
+		Key myKey =  Key.createKey("CDRC");
+		Iterator<Key> myItterator = store.storeKeysIterator( Direction.UNORDERED,0,myKey,null,null);
+		List<String> aCDRCPair;
+		int numberOfPairs=0;
+		while (myItterator.hasNext())
+		{
+			aCDRCPair = myItterator.next().getFullPath();
+			if (!suppressOutput)
+				System.out.println("CDRC: " + aCDRCPair.get(1) + "_" + aCDRCPair.get(2) + " , " + aCDRCPair.get(3) + "_" + aCDRCPair.get(4) ) ;
+			numberOfPairs++;
+		}
+		return numberOfPairs;
+	}
+
+	@Override
+	public boolean checkAndRemoveCDRCPair(int producerRule, int producerMembrane, int consumerRule, int consumerMembrane) 
+	{
+		List<String> majorComponents = Arrays.asList("CDRC",Integer.toString(producerMembrane) , Integer.toString(producerRule) );
+		List<String> minorComponents = Arrays.asList(Integer.toString(consumerMembrane) , Integer.toString(consumerRule) );
+		Key myKey = Key.createKey(majorComponents,minorComponents); 
+
+		ValueVersion myInput = store.get(myKey);
+        if (myInput==null)
+        	return false;
+        store.delete(myKey);
+        return true;
+		
 	}
 }
