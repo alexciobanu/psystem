@@ -5,7 +5,6 @@ import java.io.ObjectInputStream;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
 import java.util.UUID;
 
@@ -141,16 +140,24 @@ public class DerivationTreeGenerator
 					}
 				}
 				MultiMembraneMultiset configuration = new MultiMembraneMultiset();
-				HashMap<String,IntWritable []> rulesApplied = new HashMap<String,IntWritable []>(); 
+				MultiMembraneMultiset rulesApplied = new MultiMembraneMultiset(); 
+				IntWritable[] buff;
+				int j;
 				for(i=0;i<aCombination.length;i++)
 				{
 					ApplyAllRules.addMulisetsToConfiguration(configuration, (valuesArray.get(i))[aCombination[i]] ,membranes.get(i) , db);
-					rulesApplied.put(membranes.get(i), (valuesArray.get(i))[aCombination[i]]);
+					buff = (valuesArray.get(i))[aCombination[i]];
+					int[] rules = new int[buff.length];
+					for(j=0;j<rules.length;j++)
+					{
+						rules[j]=buff[j].get();
+					}
+					rulesApplied.add(membranes.get(i),rules);	
 				}
 				String uuid = UUID.randomUUID().toString();
 				children.add(uuid);
 				//Save rules applied
-				//db.StoreAppliedRules(uuid, rulesApplied);
+				db.StoreAppliedRules(uuid, rulesApplied);
 				for(String aMembrane: configuration.getMembranes())
 				{
 					int[] aconfig = configuration.getMulisetForMembrane(aMembrane);
@@ -160,9 +167,10 @@ public class DerivationTreeGenerator
 					List<String> majorComponents = Arrays.asList(Integer.toString(nextLevel),aMembrane);
 					Key myKey = Key.createKey(majorComponents, uuid); 
 					context.write( new KeyWritable(myKey), db.createNodeValue(aNode) );	
+					context.progress();
 				}
 			}
-			//db.StoreChildren(key.toString(), children);
+			db.StoreChildren(key.toString(), children);
     	}
    	
     }
@@ -193,11 +201,11 @@ public class DerivationTreeGenerator
         NoSQLOutputFormat.setHelperHosts(job, args[1]);
         NoSQLOutputFormat.setStoreName(job, args[0]);
         
+        job.setNumReduceTasks(2);
+        
         //Cluster Configuration
         int milliSeconds = 1000*60*60*3; 
         job.getConfiguration().setLong("mapred.task.timeout", milliSeconds);
-        job.getConfiguration().unset("mapred.reudce.tasks");
-        job.getConfiguration().setInt("mapred.reudce.tasks", 2);
         job.getConfiguration().setBoolean("mapred.reduce.tasks.speculative.execution", true);
         /*job.getConfiguration().setLong("mapred.map.max.attempts", 10);
         job.getConfiguration().setLong("mapred.skip.attempts.to.start.skipping", 3);

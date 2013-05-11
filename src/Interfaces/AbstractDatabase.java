@@ -28,7 +28,7 @@ public interface AbstractDatabase
 	
 	public void StoreNode(String NodeId, int level, String membrane, NodeData theNode);
 	
-	void StoreAppliedRules(String NodeId, Object data);
+	void StoreAppliedRules(String NodeId, MultiMembraneMultiset data);
 	
 	void StoreChildren(String NodeId,  ArrayList<String> data);
 	
