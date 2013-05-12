@@ -123,8 +123,8 @@ public class MainTools
 	
 	public static void initCDRC(String storeName, String hosts)
 	{
-		FindCdrcPairs cdrc = new FindCdrcPairs(storeName, hosts);
-		cdrc.getContextDependentRules();
+		FindCdrcPairs cdrc = new FindCdrcPairs();
+		cdrc.getContextDependentRules(db);
 	}
 	
 	public static void viewLevel(String level) throws IOException, ClassNotFoundException

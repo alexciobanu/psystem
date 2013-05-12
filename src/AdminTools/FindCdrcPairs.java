@@ -4,25 +4,23 @@ import java.util.ArrayList;
 
 import Interfaces.AbstractDatabase;
 import Interfaces.MultiMembraneMultiset;
-import Interfaces.OracleNoSQLDatabase;
 
 public class FindCdrcPairs 
 {
-	public static void main(String[] args) 
+	/*public static void main(String[] args) 
 	{
-		FindCdrcPairs cdc = new FindCdrcPairs("kvstore","Desktop:5000");
-		cdc.getContextDependentRules();
-	}
+		AbstractDatabase db = new OracleNoSQLDatabase("PsystemStore","hadoop1:5000");
+		FindCdrcPairs cdc = new FindCdrcPairs();
+		cdc.getContextDependentRules(db);
+	}*/
 	
-	AbstractDatabase db;
-	
-	public FindCdrcPairs(String storeName, String hosts)
+	public FindCdrcPairs()
 	{
-		db = new OracleNoSQLDatabase(storeName, hosts);
+		
 	}
 
 	@SuppressWarnings("unchecked")
-	public void getContextDependentRules()
+	public void getContextDependentRules(AbstractDatabase db)
 	{
 		String[] membranes = db.retriveMembraneList();
 		ArrayList<MultiMembraneMultiset> rules;
